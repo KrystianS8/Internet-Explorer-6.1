@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>HTML Game Maker™: XP Edition</title>
+
+<style>
+body {
+  font-family: Tahoma, Arial;
+  margin: 0;
+  padding: 0;
+  background: #ECE9D8;
+  font-size: 14px;
+}
+
+#topbar {
+  background: #D4D0C8;
+  padding: 4px;
+  border-bottom: 2px solid #A0A0A0;
+}
+
+#topbar button {
+  font-size: 12px;
+  padding: 4px 8px;
+  margin-right: 6px;
+}
+
+h3 {
+  margin: 6px 0;
+  padding: 5px 8px;
+  background: #D4D0C8;
+  border: 1px solid #A0A0A0;
+  font-size: 14px;
+}
+
+#editor {
+  float: left;
+  width: 49%;
+  padding-left: 8px;
+  height: 500px;
+}
+
+#preview {
+  float: right;
+  width: 49%;
+  padding-right: 8px;
+  height: 500px;
+}
+
+textarea {
+  width: 100%;
+  height: 440px;
+  border: 1px solid #A0A0A0;
+  background: #FFFFFF;
+  padding: 6px;
+  font-family: "Courier New";
+  font-size: 14px;
+}
+
+iframe {
+  width: 100%;
+  height: 440px;
+  border: 1px solid #A0A0A0;
+  background: #FFFFFF;
+}
+
+#console {
+  clear: both;
+  width: 100%;
+  height: 180px;
+  background: #D4D0C8;
+  border-top: 2px solid #A0A0A0;
+  padding: 8px;
+}
+
+#consolebox {
+  width: 99%;
+  height: 140px;
+  border: 1px solid #A0A0A0;
+  background: #FFFFFF;
+  font-family: "Courier New";
+  font-size: 14px;
+  padding: 6px;
+}
+</style>
+
+<script>
+// ===============================
+// Startup
+// ===============================
+window.onload = function() {
+  alert("Welcome to HTML Game Maker XP Edition!\n\nClick 'Guide Book' for instructions.\n\nIMPORTANT:\nYou must code in:\n- ES3 JavaScript\n- CSS2\n- HTML 4.01");
+};
+
+// ===============================
+// Guide Book
+// ===============================
+function openGuideBook() {
+ alert(
+  "HTML Game Maker XP Edition - Guide Book\n\n" +
+
+  "RULES:\n" +
+  "- Use ES3 JavaScript (var, function)\n" +
+  "- Use CSS2 only\n" +
+  "- Use HTML 4.01 only\n\n" +
+
+  "FEATURES:\n" +
+  "- Run Game: Shows your code in the preview window\n" +
+  "- Publish: Shows instructions on how to export your game\n" +
+  "- Guide Book: Opens this help menu\n\n" +
+
+  "TIPS:\n" +
+  "- Use alert(), prompt(), confirm()\n" +
+  "- Use onclick=\"...\" for buttons\n" +
+  "- Use tables or simple divs for layout\n" +
+  "- Use document.write() inside the preview iframe\n" +
+  "- Use consoleLog('text') to debug your game\n\n" +
+
+  "HOW TO USE THE EDITOR:\n" +
+  "- Type your HTML, CSS, and JavaScript in the editor.\n" +
+  "- Click \"Run Game\" to see your game.\n" +
+  "- Test often.\n\n" +
+
+  "PUBLISHING:\n" +
+  "- Save your code as .html\n" +
+  "- Share it online\n\n" +
+
+  "Have fun coding like it's 2001!"
+ );
+}
+
+// ===============================
+// ? ORIGINAL PUBLISH ALERT (FULLY FIXED)
+// ===============================
+function publishGame() {
+  alert(
+    "Here is a Step-by-step guide on how to publish\n\n" +
+    "Step 1. Copy all of your code from the Editor.\n" +
+    "Step 2. Make a new text document and put your code inside.\n" +
+    "Step 3. Select 'File' then select 'Save as,' name the file your game name and add the text '.html' at the end. Make sure that the save type is set to 'All Files' before saving.\n" +
+    "Step 4. Share the HTML with your friends or put it online for everyone to enjoy!\n\n" +
+    "WARNING: We are not at fault for any sort of cyber-bullying, or hacking. Use HTTPS for the best sharing.\n\n\n" +
+    "Have Fun Coding!"
+  );
+}
+
+// ===============================
+// Run Game
+// ===============================
+function runGame() {
+  var code = document.getElementById("codebox").value;
+
+  // FILE or FAVICON DETECTION (ALERT ONLY — NO SKIPPING)
+  if (code.match(/file|fs|readFile|writeFile|openFile|rel=["']?icon|favicon/i)) {
+    alert("file and/or favicon detection is not supported.\nAll file and/or favicon detection code wasn't used for obvious reasons\n\nCheck 'http://localhost/maker/support/vista-xp.html' for help.");
+    // DO NOT SKIP ANYTHING
+    // DO NOT REMOVE ANYTHING
+    // DO NOT CLEAN ANYTHING
+    // IE6 will ignore unsupported code automatically
+  }
+
+  // Detect <title> in user code
+  var gameTitle = "";
+  var titleMatch = code.match(/<title>(.*?)<\/title>/i);
+
+  if (titleMatch && titleMatch[1]) {
+    gameTitle = titleMatch[1];
+  }
+
+  // Update window title
+  if (gameTitle !== "") {
+    document.title = "HTML Game Maker™: XP Edition - " + gameTitle;
+  } else {
+    document.title = "HTML Game Maker™: XP Edition";
+  }
+
+  var iframeWindow = document.getElementById("gameframe").contentWindow;
+
+  iframeWindow.document.open();
+  iframeWindow.consoleLog = consoleLog;
+  iframeWindow.document.write(code); // <-- inject FULL code
+  iframeWindow.document.close();
+}
+
+
+// ===============================
+// Console
+// ===============================
+function consoleLog(msg) {
+  var c = document.getElementById("consolebox");
+  c.value += msg + "\n";
+}
+</script>
+
+</head>
+<body>
+
+<div id="topbar">
+  <button disabled style="color:#888888; background:#D4D0C8;">Extensions (Coming Soon)</button>
+
+  <button onclick="runGame()">Run Game</button>
+  <button onclick="publishGame()">Publish</button>
+  <button onclick="openGuideBook()">Guide Book</button>
+</div>
+
+<div id="editor">
+  <h3>Editor</h3>
+  <textarea id="codebox">
+<html>
+<body>
+<!Click Play>
+<head>
+<title>HTML Game Maker™: XP Edition - Homepage</title>
+</head>
+<h1>HTML Game Maker™: XP Edition</h1>
+<h2>Homepage</h2>
+<button onclick="alert('Button clicked!')">Test Alerts</button>
+
+<button onclick="var x = prompt('Type something:'); alert('You typed: ' + x);">
+Test Prompts
+</button>
+
+<button onclick="consoleLog('Hello from your game!')">Test Console</button>
+<hr>
+<h1>Enjoy!</h1>
+</body>
+</html>
+  </textarea>
+</div>
+
+<div id="preview">
+  <h3>Game Preview</h3>
+  <iframe id="gameframe"></iframe>
+</div>
+
+<div id="console">
+  <h3>Console</h3>
+  <textarea id="consolebox" readonly></textarea>
+</div>
+
+</body>
+</html>

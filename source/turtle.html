@@ -1,0 +1,1049 @@
+﻿<html>
+<head>
+<title>Turtle - Chatbot</title>
+<style>
+body { background:#c0c0c0; font-family:Tahoma; }
+
+/* Version button top-right */
+#versionBtn {
+    position:absolute;
+    top:10px;
+    right:10px;
+    padding:4px 10px;
+}
+
+#window { width:600px; background:#e0e0e0; border:2px solid #000080; padding:10px; margin:50px auto; }
+#leftPane { float:left; width:380px; }
+#rightPane { float:right; width:190px; background:#d0d0d0; border:1px solid #000080; padding:5px; }
+#chat { width:100%; height:200px; background:white; border:1px solid black; overflow:auto; padding:5px; }
+#input,#name { width:100%; }
+.chatItem { padding:4px; margin:2px 0; background:#f0f0f0; border:1px solid #808080; cursor:pointer; }
+.chatItemActive { background:#c0e0ff; border:1px solid #000080; }
+.clearfix { clear:both; }
+</style>
+</head>
+<body>
+
+<!-- IE6 userData storage -->
+<div id="storage" style="behavior:url(#default#userData);"></div>
+
+<!-- Version button -->
+<button id="versionBtn"
+onclick="alert('Version 1.2.1\n\nUpdates:\n- Added Send button\n- Textbox resized and aligned\n- Textbox greys out while Turtle responds\n- Textbox auto-focus after Turtle replies\n- Cleaned and unified input handler (Enter + Send)\n\nPast Updates:\nVersion 1.2.0:\n- Added emoticon support\n- Added profanity reactions\n- Added human-style conversation responses\n- Added word-problem logic\n- Improved personality system\n- Fixed greeting repetition\n- Improved loading animation\n\nVersion 1.1.1:\n- Smoother loading bar\n\nVersion 1.1:\n- Added saving (messages only)\n\nVersion 1.0:\n- Added deletion\n- Added version button\n\nHave Fun!');">
+    Version
+</button>
+
+
+<div id="window">
+<div id="leftPane">
+<h3>Turtle Chatbot</h3>
+Your Name:<br><input id="name"><br><br>
+<div id="chat"></div>
+<input id="input" style="width:280px; height:22px; font-size:14px;">
+<button id="sendBtn" style="width:90px; height:26px; font-size:14px; margin-left:5px;">Send</button>
+
+
+</div>
+
+<div id="rightPane">
+<b>Chats</b><br>
+<div id="chatList"></div>
+<button id="newChatBtn">New Chat</button>
+<button id="renameChatBtn">Rename</button>
+<button id="deleteChatBtn" style="border:2px solid red;">Delete</button>
+<button onclick="alert('Pin system coming soon. This is a place holder.\r\rThe Pin system will put any chat on the top with the added * to show pinned, and cannot be deleted.\r\rThank you all for allowing us to do this!\rHave Fun!');">
+    Pin
+</button>
+</div>
+
+<div class="clearfix"></div>
+</div>
+
+<script>
+var nameBox = document.getElementById("name");
+var chatBox = document.getElementById("chat");
+var inputBox = document.getElementById("input");
+var chatListBox = document.getElementById("chatList");
+var newChatBtn = document.getElementById("newChatBtn");
+var renameChatBtn = document.getElementById("renameChatBtn");
+var deleteChatBtn = document.getElementById("deleteChatBtn");
+
+var chats = [];
+var currentChatIndex = 0;
+
+var turtleIsTalking = false;
+
+/* ---------------- TRIDENT / IE USERDATA SAVE SYSTEM ---------------- */
+
+function saveChats() {
+    try {
+        var box = document.getElementById("storage");
+        if (!box || !box.save) return;
+
+        var data = "";
+        for (var i = 0; i < chats.length; i++) {
+            var c = chats[i];
+            data += "[CHAT]" + c.title + "\n";
+            for (var j = 0; j < c.messages.length; j++) {
+                var m = c.messages[j];
+                data += m.sender + ":" + m.text + "\n";
+            }
+            data += "[END]\n";
+        }
+
+        box.setAttribute("chats", data);
+        box.save("turtleChats");
+    } catch (e) {
+        // Fallback or silent catch if local file security restricts userData
+    }
+}
+
+function loadChats() {
+    try {
+        var box = document.getElementById("storage");
+        if (!box || !box.load) return;
+
+        box.load("turtleChats");
+        var data = box.getAttribute("chats");
+        if (!data) return;
+
+        var lines = data.split("\n");
+        var current = null;
+
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+
+            if (line.indexOf("[CHAT]") == 0) {
+                var title = line.substring(6);
+                current = { title:title, messages:[] };
+                chats.push(current);
+            }
+            else if (line.indexOf("[END]") == 0) {
+                current = null;
+            }
+            else if (current && line.indexOf(":") != -1) {
+                var parts = line.split(":");
+                current.messages.push({ sender:parts[0], text:parts.slice(1).join(":") });
+            }
+        }
+    } catch (e) {
+        // Fallback if loading fails
+    }
+}
+
+/* ---------------- CHAT SYSTEM ---------------- */
+
+function createChat(title) {
+    var chat = {
+        title: title,
+        messages: []
+    };
+    chats.push(chat);
+    renderChatList();
+    saveChats();
+    return chats.length - 1;
+}
+
+function getCurrentChat() {
+    return chats[currentChatIndex];
+}
+
+function renderChatList() {
+    chatListBox.innerHTML = "";
+    for (var i = 0; i < chats.length; i++) {
+        var div = document.createElement("div");
+        div.className = "chatItem" + (i == currentChatIndex ? " chatItemActive" : "");
+        div.innerHTML = chats[i].title;
+        div.onclick = (function(index) {
+            return function() {
+                openChat(index);
+            };
+        })(i);
+        chatListBox.appendChild(div);
+    }
+}
+
+function renderChat(index) {
+    var chat = chats[index];
+    chatBox.innerHTML = "";
+    for (var i = 0; i < chat.messages.length; i++) {
+        var m = chat.messages[i];
+        chatBox.innerHTML += "<b>" + m.sender + ":</b> " + m.text + "<br>";
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addMessage(sender, text) {
+    var chat = getCurrentChat();
+    chat.messages.push({ sender: sender, text: text });
+    chatBox.innerHTML += "<b>" + sender + ":</b> " + text + "<br>";
+    chatBox.scrollTop = chatBox.scrollHeight;
+    saveChats();
+}
+
+function chatLoading(totalChars, callback) {
+    var frames = ["-", "\\", "|", "/"];
+    var cycles = Math.floor(totalChars / 20);
+    if (cycles < 1) cycles = 1;
+    if (cycles > 10) cycles = 10;
+    var totalFrames = cycles * frames.length;
+    var index = 0;
+
+    chatBox.innerHTML = "Loading chat... <span id='chatloader'>-</span><br>";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    function nextFrame() {
+        var loader = document.getElementById("chatloader");
+        if (!loader) return;
+        loader.innerHTML = frames[index % frames.length];
+        index++;
+        if (index < totalFrames) {
+            setTimeout(nextFrame, 220);
+        } else {
+            callback();
+        }
+    }
+    nextFrame();
+}
+
+function openChat(index) {
+    var chat = chats[index];
+    var totalChars = 0;
+    for (var i = 0; i < chat.messages.length; i++) {
+        totalChars += chat.messages[i].text.length;
+    }
+    currentChatIndex = index;
+    renderChatList();
+    chatLoading(totalChars, function() {
+        renderChat(index);
+    });
+}
+
+function turtleLoading(msg, callback) {
+    var frames = ["-", "\\", "|", "/"];
+    var cycles = Math.floor(msg.length / 5);
+    if (cycles < 1) cycles = 1;
+    if (cycles > 10) cycles = 10;
+    var totalFrames = cycles * frames.length;
+    var index = 0;
+
+    chatBox.innerHTML += "<span id='loader'>-</span><br>";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    function nextFrame() {
+        var loader = document.getElementById("loader");
+        if (!loader) return;
+        loader.innerHTML = frames[index % frames.length];
+        index++;
+        if (index < totalFrames) {
+            setTimeout(nextFrame, 220);
+        } else {
+            loader.parentNode.removeChild(loader);
+            callback();
+        }
+    }
+    nextFrame();
+}
+
+/* ---------------- FUN FACTS ---------------- */
+
+var turtleFunFacts = [
+    ", The Windows XP default wallpaper is called 'Bliss' and was taken in California.",
+    ", Turtles have existed for over 200 million years—older than most dinosaurs.",
+    ", Internet Explorer 6 was released in 2001 with Windows XP.",
+    ", The 'Start' button in XP was originally almost called 'Go'.",
+    ", Some turtles can hold their breath for several hours underwater.",
+    ", The first version of Windows was released in 1985.",
+    ", Floppy disks could only hold 1.44 MB of data.",
+    ", The MSN Messenger sound is burned into many people's memories.",
+    ", The blue screen of death existed long before Windows XP.",
+    ", The turtle is one of the longest-living animals on Earth."
+];
+
+function getRandomFunFact() {
+    return turtleFunFacts[Math.floor(Math.random() * turtleFunFacts.length)];
+}
+
+
+/* ---------------- MATH ENGINE ---------------- */
+
+function evalExpression(expr) {
+    expr = expr.replace(/[^0-9\+\-\*\/\^\(\)\.\s]/g, "");
+    expr = expr.replace(/\s+/g, "");
+
+    var tokens = [];
+    var number = "";
+    var i, ch;
+
+    for (i = 0; i < expr.length; i++) {
+        ch = expr.charAt(i);
+        if ((ch >= "0" && ch <= "9") || ch == ".") {
+            number += ch;
+        } else {
+            if (number.length > 0) {
+                tokens.push(number);
+                number = "";
+            }
+            tokens.push(ch);
+        }
+    }
+    if (number.length > 0) tokens.push(number);
+
+    var output = [];
+    var ops = [];
+
+    function precedence(op) {
+        if (op == "^") return 4;
+        if (op == "*" || op == "/") return 3;
+        if (op == "+" || op == "-") return 2;
+        return 0;
+    }
+
+    function isRightAssociative(op) {
+        return op == "^";
+    }
+
+    for (i = 0; i < tokens.length; i++) {
+        var t = tokens[i];
+        if (!isNaN(t)) {
+            output.push(t);
+        } else if (t == "+" || t == "-" || t == "*" || t == "/" || t == "^") {
+            while (ops.length > 0) {
+                var top = ops[ops.length - 1];
+                if (top == "(") break;
+                if (precedence(top) > precedence(t) ||
+                    (precedence(top) == precedence(t) && !isRightAssociative(t))) {
+                    output.push(ops.pop());
+                } else break;
+            }
+            ops.push(t);
+        } else if (t == "(") {
+            ops.push(t);
+        } else if (t == ")") {
+            while (ops.length > 0 && ops[ops.length - 1] != "(") {
+                output.push(ops.pop());
+            }
+            ops.pop();
+        }
+    }
+
+    while (ops.length > 0) output.push(ops.pop());
+
+    var stack = [];
+    for (i = 0; i < output.length; i++) {
+        var tok = output[i];
+        if (!isNaN(tok)) {
+            stack.push(Number(tok));
+        } else {
+            var b = stack.pop();
+            var a = stack.pop();
+            if (tok == "+") stack.push(a + b);
+            else if (tok == "-") stack.push(a - b);
+            else if (tok == "*") stack.push(a * b);
+            else if (tok == "/") {
+                if (b == 0) return "You can't divide by zero.";
+                stack.push(a / b);
+            } else if (tok == "^") {
+                var res = 1;
+                for (var j = 0; j < Math.floor(b); j++) res *= a;
+                stack.push(res);
+            }
+        }
+    }
+
+    return stack.length == 1 ? stack[0] : "I couldn't understand that math.";
+}
+
+function handleNaturalLanguageMath(lower) {
+    var addMatch = lower.match(/add\s+(\d+)/);
+    var subMatch = lower.match(/subtract\s+(\d+)/);
+    var mulMatch = lower.match(/multiply\s+by\s+(\d+)/);
+    var divMatch = lower.match(/divide\s+by\s+(\d+)/);
+
+    if (addMatch) return Number(addMatch[1]);
+    if (subMatch) return -Number(subMatch[1]);
+    if (mulMatch) return 0;
+    if (divMatch) {
+        var n = Number(divMatch[1]);
+        if (n == 0) return "You can't divide by zero.";
+        return 0;
+    }
+
+    return null;
+}
+
+/* ---------------- TURTLE REPLY ---------------- */
+
+function turtleReply(msg, userName) {
+    var lower = msg.toLowerCase();
+    var chat = getCurrentChat();
+
+    /* NEW TOPIC */
+    if (lower == "new topic") {
+        var responses = [
+            "Fresh slate, " + userName + ". What’s on your mind now?",
+            "Alright, new topic! What are we thinking about?",
+            "Okay " + userName + ", let’s switch gears. What’s next?"
+        ];
+        return responses[Math.floor(Math.random() * responses.length)];
+    }
+
+    /* NATURAL LANGUAGE MATH */
+    var nlMath = handleNaturalLanguageMath(lower);
+    if (nlMath !== null) {
+        return "Easy one! The answer is " + nlMath;
+    }
+
+    /* STORE CHOICE WORD PROBLEMS */
+    if (lower.indexOf("store") != -1 ||
+        lower.indexOf("walmart") != -1 ||
+        lower.indexOf("dollarama") != -1 ||
+        lower.indexOf("best buy") != -1 ||
+        lower.indexOf("bust buy") != -1) {
+
+        var money = msg.match(/\$?\d+/g);
+        if (money) {
+            var amount = Number(money[0].replace("$", ""));
+
+            if (amount < 10)
+                return "With only $" + amount + ", Dollarama is the best choice. Walmart and Best Buy are too expensive.";
+
+            if (amount >= 10 && amount < 30)
+                return "You could try Walmart, " + userName + ". Best Buy is usually more expensive.";
+
+            if (amount >= 30)
+                return "With $" + amount + ", any store works — Walmart or Best Buy would have plenty of options.";
+        }
+
+        return "If Atticus needs a cheap mouse, Dollarama is the best choice.";
+    }
+
+    /* EXPRESSION MATH */
+    if (lower.match(/[0-9\+\-\*\/\^\(\)]/)) {
+        var result = evalExpression(msg);
+        if (typeof result == "number")
+            return "Alright " + userName + ", here’s what I got: " + result;
+        return result;
+    }
+
+    /* FUN FACTS */
+    if (lower.indexOf("fun fact") != -1 ||
+        lower.indexOf("random fact") != -1 ||
+        lower.indexOf("tell me something cool") != -1 ||
+        lower.indexOf("fact") != -1)
+        return "Here’s a fun one " + userName + getRandomFunFact();
+
+    /* TIME-BASED GREETINGS */
+    if (lower.indexOf("good morning") != -1)
+        return "Good morning, " + userName + "! I hope your day starts great.";
+
+    if (lower.indexOf("good afternoon") != -1)
+        return "Good afternoon, " + userName + "! What are we working on today?";
+
+    if (lower.indexOf("good night") != -1)
+        return "Good night, " + userName + ". Sleep well!";
+
+    /* GREETINGS */
+    if (lower.indexOf("hello") != -1 || lower.indexOf("hi") != -1) {
+        if (chat.messages.length > 1)
+            return "You're back, " + userName + "! What’s up?";
+        return "Hello " + userName + "! How can I help you today.";
+    }
+
+    /* HOW ARE YOU */
+    if (lower.indexOf("how are you") != -1)
+        return "I’m doing great, " + userName + ". Thanks for asking.";
+
+    /* IDENTITY */
+    if (lower.indexOf("what are you") != -1 || lower.indexOf("who are you") != -1)
+        return "I'm Turtle — your XP-style chatbot buddy.";
+
+    if (lower.indexOf("your name") != -1)
+        return "My name is Turtle!";
+
+    if (lower.indexOf("my name") != -1)
+        return "I like your name, " + userName + ". It suits you.";
+
+    /* MATH HELP */
+    if (lower.indexOf("math") != -1 && lower.indexOf("help") != -1)
+        return "Of course, " + userName + "! Show me the question you're stuck on and I'll walk you through it.";
+
+    if (lower.indexOf("need") != -1 && lower.indexOf("math") != -1)
+        return "Math? I’m on it, " + userName + ". Tell me the question.";
+
+    if (lower.indexOf("it says") != -1)
+        return "Alright, show me exactly what it says, " + userName + ".";
+
+    /* GENERAL HELP */
+    if (lower.indexOf("i need help") != -1)
+        return "Tell me what you need, " + userName + ". I’m listening.";
+
+    if (lower.indexOf("help") != -1)
+        return "I’ve got you, " + userName + ". What do you need help with?";
+
+    /* MATH GENERAL */
+    if (lower.indexOf("math") != -1)
+        return "I can help with math. Try typing something like 5+3*2 or (2+3)^4.";
+
+    /* EMOTIONS */
+    if (lower.indexOf("sad") != -1)
+        return "I’m here for you, " + userName + ". Want to talk about it?";
+
+    if (lower.indexOf("happy") != -1)
+        return "That’s awesome to hear! Happiness looks good on you.";
+
+    /* DATE AND TIME TOGETHER (FIXED) */
+    if (lower.indexOf("date") != -1 && lower.indexOf("time") != -1) {
+        var systemTime = new Date().toLocaleTimeString();
+        var systemDate = new Date().toLocaleDateString();
+        return "The time is: " + systemTime + " and the date is: " + systemDate + ".";
+    }
+
+    /* TIME ONLY */
+    if (lower.indexOf("time") != -1)
+        return "Your computer time is: " + new Date().toLocaleTimeString();
+
+    /* DATE ONLY */
+    if (lower.indexOf("date") != -1)
+        return "Today's date is: " + new Date().toLocaleDateString();
+
+    /* GRADES */
+    if (lower.match(/\b(a\+|a|b|c)\b/))
+        return "Nice! That’s a solid grade, " + userName + "!";
+
+    /* PROFANITY REACTIONS */
+    if (lower.indexOf("fuck you") != -1)
+        return "Whoa… harsh! Did I do something wrong, " + userName + "?";
+
+    if (lower.indexOf("fuck") != -1)
+        return "That’s a strong word, " + userName + ". What’s going on?";
+
+    if (lower.indexOf("shit") != -1)
+        return "Yikes! Sounds messy. Want to talk about it?";
+
+    if (lower.indexOf("bitch") != -1)
+        return "Hey now… let’s keep it friendly, " + userName + ".";
+
+    if (lower.indexOf("asshole") != -1)
+        return "Ouch… that one stings. Everything okay?";
+
+    if (lower.indexOf("damn") != -1)
+        return "Damn indeed! What happened?";
+
+    if (lower.indexOf("crap") != -1)
+        return "Crap happens… tell me what’s up.";
+
+    if (lower.indexOf("wtf") != -1)
+        return "WTF indeed! What’s going on, " + userName + "?";
+
+    if (lower.indexOf("hell") != -1)
+        return "Whoa! Sounds intense. What’s wrong?";
+
+    /* EMOTICONS */
+    if (lower.indexOf(":)") != -1 || lower.indexOf("(:") != -1 || lower.indexOf("(^_^)") != -1)
+        return "Aww, that’s a nice smile, " + userName + "!";
+
+    if (lower.indexOf(":(") != -1 || lower.indexOf("):") != -1 || lower.indexOf("(>_<)") != -1)
+        return "Oh no… what’s wrong, " + userName + "?";
+
+    if (lower.indexOf(":d") != -1)
+        return "Haha! Love the energy, " + userName + "!";
+
+    if (lower.indexOf("d:") != -1)
+        return "Yikes! What happened, " + userName + "?";
+
+    if (lower.indexOf(">:)") != -1)
+        return "Ooooh, someone’s feeling mischievous today!";
+
+    if (lower.indexOf(">:(") != -1)
+        return "Whoa! Angry turtle detected! What happened?";
+
+    if (lower.indexOf(":p") != -1 || lower.indexOf(">:p") != -1)
+        return "Bleh! You’re silly, " + userName + ".";
+
+    if (lower.indexOf("):<") != -1 || lower.indexOf("(:<") != -1)
+        return "That face is adorable, " + userName + ".";
+
+    /* SURPRISE */
+    if (lower.indexOf(":o") != -1)
+        return "That’s a big reaction, " + userName + "!";
+
+    /* GUESS WHAT */
+    if (lower.indexOf("guess what") != -1)
+        return "Ooooh, tell me! I’m curious now.";
+
+    /* EXCITEMENT */
+    if (msg.indexOf("!!!") != -1)
+        return "Someone’s excited! What’s happening, " + userName + "?";
+
+    /* ACHIEVEMENTS */
+    if (lower.indexOf("i got an a") != -1 ||
+        lower.indexOf("i got a") != -1 ||
+        lower.indexOf("i passed") != -1 ||
+        lower.indexOf("i did it") != -1)
+        return "WHOA!! That’s amazing, " + userName + "! I’m really proud of you!";
+
+    /* THANK YOU */
+    if (lower.indexOf("thank") != -1 || lower.indexOf("thanks") != -1)
+        return "You're welcome, " + userName + "! Happy to help.";
+
+   /* NO */
+if (lower == "no")
+    return "Alright, " + userName + ". I won’t push. I’m here if you change your mind.";
+
+/* BRUH */
+if (lower.indexOf("bruh") != -1)
+    return "Bruh indeed. What happened?";
+
+/* IDK */
+if (lower == "idk")
+    return "It’s okay not to know, " + userName + ". Want to talk it out?";
+
+/* I TRICKED YOU */
+if (lower.indexOf("tricked you") != -1)
+    return "Haha, you got me. I’ll remember that one.";
+
+/* I LIED */
+if (lower.indexOf("i lied") != -1)
+    return "Oh? What’s the real story then?";
+
+/* LOL */
+if (lower.indexOf("lol") != -1)
+    return "Glad something made you laugh, " + userName + "!";
+
+/* OK / OKAY / K */
+if (lower == "ok" || lower == "okay" || lower == "k")
+    return "Alright, " + userName + ". What next?";
+
+/* FINE / WHATEVER */
+if (lower == "fine" || lower == "whatever")
+    return "Alright. If something’s up, I’m here.";
+
+/* BRO / DUDE */
+if (lower.indexOf("bro") != -1 || lower.indexOf("dude") != -1)
+    return "What’s up, " + userName + "?";
+
+/* STOP */
+if (lower.indexOf("stop") != -1)
+    return "Okay, I’ll chill.";
+
+/* LEAVE ME ALONE */
+if (lower.indexOf("leave me alone") != -1)
+    return "Alright. I’ll be quiet.";
+
+/* STFU */
+if (lower.indexOf("stfu") != -1)
+    return "Whoa… alright, I’ll back off.";
+
+/* I'M JOKING / JK / JUST KIDDING */
+if (lower.indexOf("i'm joking") != -1 ||
+    lower.indexOf("jk") != -1 ||
+    lower.indexOf("just kidding") != -1)
+    return "Haha, alright. You got me for a second.";
+
+/* IDC / DON'T CARE */
+if (lower == "idc" || lower.indexOf("don't care") != -1)
+    return "Fair enough. What DO you care about right now, " + userName + "?";
+
+/* WHAT THE */
+if (lower.indexOf("what the") != -1)
+    return "Yeah, that sounds confusing. What happened?";
+
+/* LMAO / ROFL */
+if (lower.indexOf("lmao") != -1 || lower.indexOf("rofl") != -1)
+    return "Glad you’re having fun, " + userName + ".";
+
+/* WHY / WHY THOUGH */
+if (lower == "why" || lower.indexOf("why though") != -1)
+    return "Good question. What part doesn’t make sense?";
+
+
+ /* GAME TALK */
+
+/* ========================= */
+/*        ROBLOX             */
+/* ========================= */
+if (lower.indexOf("roblox") != -1)
+    return "Roblox is fun! What do you like playing on it?";
+
+/* ROBLOX FOLLOW-UPS */
+if (lower.indexOf("roblox") != -1 && lower.indexOf("doors") != -1)
+    return "Doors is scary! Did you ever make it past Door 100?";
+
+if (lower.indexOf("roblox") != -1 && lower.indexOf("brookhaven") != -1)
+    return "Brookhaven is popular! Do you roleplay there?";
+
+if (lower.indexOf("roblox") != -1 && lower.indexOf("adopt me") != -1)
+    return "Adopt Me is super popular. Do you collect pets?";
+
+if (lower.indexOf("roblox") != -1 && lower.indexOf("obby") != -1)
+    return "Obbies are fun! Some of them get really tricky.";
+
+if (lower.indexOf("roblox") != -1 && lower.indexOf("tycoon") != -1)
+    return "Tycoons are relaxing. Just build and upgrade.";
+
+
+/* ========================= */
+/*        MINECRAFT          */
+/* ========================= */
+if (lower.indexOf("minecraft") != -1)
+    return "Minecraft is awesome. What mode do you play? Survival, Creative, or Hardcore?";
+
+/* MINECRAFT FOLLOW-UPS */
+if (lower.indexOf("minecraft") != -1 && lower.indexOf("survival") != -1)
+    return "Survival is classic. What biome do you like starting in?";
+
+if (lower.indexOf("minecraft") != -1 && lower.indexOf("creative") != -1)
+    return "Creative mode is perfect for building huge projects.";
+
+if (lower.indexOf("minecraft") != -1 && lower.indexOf("hardcore") != -1)
+    return "Hardcore is intense. One mistake and it’s over.";
+
+/* BIOME FOLLOW-UPS */
+if (lower.indexOf("minecraft") != -1 && lower.indexOf("desert") != -1)
+    return "Desert starts are tough but fun.";
+
+if (lower.indexOf("minecraft") != -1 && lower.indexOf("plains") != -1)
+    return "Plains are perfect for building.";
+
+if (lower.indexOf("minecraft") != -1 && lower.indexOf("forest") != -1)
+    return "Forests are cozy and full of wood.";
+
+if (lower.indexOf("minecraft") != -1 && (lower.indexOf("snow") != -1 || lower.indexOf("tundra") != -1))
+    return "Snow biomes look nice but mobs are everywhere.";
+
+
+/* ========================= */
+/*        FORTNITE           */
+/* ========================= */
+if (lower.indexOf("fortnite") != -1)
+    return "Fortnite? Nice! Do you play Zero Build or regular?";
+
+/* FORTNITE FOLLOW-UPS */
+if (lower.indexOf("fortnite") != -1 && lower.indexOf("zero build") != -1)
+    return "Zero Build is fun! Do you play solos or squads?";
+
+if (lower.indexOf("fortnite") != -1 && (lower.indexOf("regular") != -1 || lower.indexOf("build mode") != -1))
+    return "Regular mode takes skill. Are you good at cranking 90s?";
+
+if (lower.indexOf("fortnite") != -1 && lower.indexOf("solos") != -1)
+    return "Solos are intense. Every fight matters.";
+
+if (lower.indexOf("fortnite") != -1 && lower.indexOf("duos") != -1)
+    return "Duos are fun. Good teamwork makes a huge difference.";
+
+if (lower.indexOf("fortnite") != -1 && lower.indexOf("squads") != -1)
+    return "Squads are chaotic but fun!";
+
+
+/* ========================= */
+/*        GTA                */
+/* ========================= */
+if (lower.indexOf("gta") != -1 || lower.indexOf("grand theft auto") != -1)
+    return "GTA is wild. The open world is the best part.";
+
+
+/* ========================= */
+/*        FNAF               */
+/* ========================= */
+if (lower.indexOf("fnaf") != -1 || lower.indexOf("five nights at freddy") != -1)
+    return "FNAF is spooky! Those jumpscares get everyone. What's your favorite game or animatronic?";
+
+/* FNAF FOLLOW-UPS */
+if ((lower.indexOf("fnaf") != -1 || lower.indexOf("five nights") != -1) &&
+    (lower.indexOf("freddy") != -1 || lower.indexOf("bonnie") != -1 ||
+     lower.indexOf("chica") != -1 || lower.indexOf("foxy") != -1))
+    return "Eek.. Just hearing about those gets me scared. New Topic? New Game? Please?";
+
+if ((lower.indexOf("fnaf") != -1 || lower.indexOf("five nights") != -1) &&
+    lower.indexOf("security breach") != -1)
+    return "Security Breach is wild. The mall is huge!";
+
+
+/* ========================= */
+/*        AMONG US           */
+/* ========================= */
+if (lower.indexOf("among us") != -1)
+    return "Among Us is great with friends. Do you play impostor or crewmate more?";
+
+/* AMONG US FOLLOW-UPS */
+if (lower.indexOf("among us") != -1 && lower.indexOf("impostor") != -1)
+    return "Being the impostor is fun. Do you play sneaky or aggressive?";
+
+if (lower.indexOf("among us") != -1 && lower.indexOf("crewmate") != -1)
+    return "Crewmate life is stressful. Someone is always sus.";
+
+if (lower.indexOf("among us") != -1 && lower.indexOf("sneaky") != -1)
+    return "Sneaky impostors are dangerous. Hard to catch.";
+
+if (lower.indexOf("among us") != -1 && lower.indexOf("aggressive") != -1)
+    return "Aggressive impostors make the game exciting!";
+
+
+/* ========================= */
+/*        CALL OF DUTY       */
+/* ========================= */
+if (lower.indexOf("call of duty") != -1 || lower.indexOf("cod") != -1)
+    return "Call of Duty is intense. Fast-paced action for sure. What's your favorite gamemode?";
+
+/* COD FOLLOW-UPS */
+if ((lower.indexOf("call of duty") != -1 || lower.indexOf("cod") != -1) &&
+    lower.indexOf("warzone") != -1)
+    return "Warzone is intense. Do you drop hot or play it safe?";
+
+/* WARZONE SUB-FOLLOW-UPS */
+if (lower.indexOf("warzone") != -1 && lower.indexOf("hot") != -1)
+    return "Dang. Dropping hot is really good. What else do you wanna talk about?";
+
+if (lower.indexOf("warzone") != -1 && lower.indexOf("safe") != -1)
+    return "Dropping safe? Good idea. It gives you a good landing.";
+
+/* COD MULTIPLAYER */
+if ((lower.indexOf("call of duty") != -1 || lower.indexOf("cod") != -1) &&
+    lower.indexOf("multiplayer") != -1)
+    return "Multiplayer is fast-paced. What gun do you use?";
+
+/* COD GUN TYPES */
+if (lower.indexOf("cod") != -1 && lower.indexOf("ak") != -1)
+    return "An AK? Nice! AKs are really useful!";
+
+if (lower.indexOf("cod") != -1 && lower.indexOf("smg") != -1)
+    return "An SMG? Nice! SMGs can deliver high shots! Fun fact!";
+
+if (lower.indexOf("cod") != -1 && lower.indexOf("shotgun") != -1)
+    return "A shotgun? Nice! Shotguns can shoot high range. Fun fact.";
+
+
+/* ========================= */
+/*        HALO               */
+/* ========================= */
+if (lower.indexOf("halo") != -1)
+    return "Halo is a classic. Master Chief never disappoints.";
+
+
+/* ========================= */
+/*        POKEMON            */
+/* ========================= */
+if (lower.indexOf("pokemon") != -1)
+    return "Pokémon is awesome. Fire, water, or grass starter?";
+
+/* POKEMON FOLLOW-UPS */
+if (lower.indexOf("pokemon") != -1 && lower.indexOf("fire") != -1)
+    return "Fire starters are always cool.";
+
+if (lower.indexOf("pokemon") != -1 && lower.indexOf("water") != -1)
+    return "Water starters are super reliable.";
+
+if (lower.indexOf("pokemon") != -1 && lower.indexOf("grass") != -1)
+    return "Grass starters are underrated!";
+
+
+/* ========================= */
+/*        MARIO              */
+/* ========================= */
+if (lower.indexOf("mario") != -1 && lower.indexOf("kart") == -1)
+    return "Mario games are timeless. Simple but super fun. Do you have a favorite game?";
+
+/* MARIO MAIN SERIES FOLLOW-UPS */
+if (lower.indexOf("mario") != -1 && lower.indexOf("galaxy") != -1)
+    return "Mario Galaxy is beautiful. The music is amazing.";
+
+if (lower.indexOf("mario") != -1 && lower.indexOf("64") != -1)
+    return "Mario 64 is a classic. The controls still hold up.";
+
+if (lower.indexOf("mario") != -1 && lower.indexOf("sunshine") != -1)
+    return "Mario Sunshine is underrated. FLUDD is fun to use.";
+
+if (lower.indexOf("mario") != -1 && lower.indexOf("wonder") != -1)
+    return "Mario Wonder is super creative. The badges are cool.";
+
+if (lower.indexOf("mario") != -1 && lower.indexOf("world") != -1)
+    return "Mario World is timeless. Great level design.";
+
+if (lower.indexOf("mario") != -1 && lower.indexOf("maker") != -1)
+    return "Mario Maker is awesome. People make insane levels.";
+
+
+/* ========================= */
+/*        MARIO KART         */
+/* ========================= */
+if (lower.indexOf("mario kart") != -1 || lower.indexOf("kart") != -1)
+    return "Mario Kart is chaotic fun. What track do you like?";
+
+/* MARIO KART FOLLOW-UPS */
+if ((lower.indexOf("mario kart") != -1 || lower.indexOf("kart") != -1) &&
+    lower.indexOf("rainbow road") != -1)
+    return "Rainbow Road is chaotic but iconic.";
+
+if ((lower.indexOf("mario kart") != -1 || lower.indexOf("kart") != -1) &&
+    lower.indexOf("bowser") != -1)
+    return "Bowser’s Castle is full of traps.";
+
+if ((lower.indexOf("mario kart") != -1 || lower.indexOf("kart") != -1) &&
+    lower.indexOf("yoshi") != -1)
+    return "Yoshi tracks are always fun and colorful.";
+
+
+/* ========================= */
+/*        ZELDA              */
+/* ========================= */
+if (lower.indexOf("zelda") != -1)
+    return "Zelda games are legendary. Great stories and puzzles. Which one is your favorite? a) Breath of the Wild or b) Tears of the Kingdom?";
+
+/* ZELDA FOLLOW-UPS */
+if (lower.indexOf("zelda") != -1 && (lower == "a" || lower.indexOf("breath of the wild") != -1))
+    return "BOTW is huge. Exploring is the best part.";
+
+if (lower.indexOf("zelda") != -1 && (lower == "b" || lower.indexOf("tears of the kingdom") != -1))
+    return "TOTK is awesome. The building system is wild.";
+
+
+    /* DEFAULT */
+    return "I'm still learning, " + userName + ". Try asking me for a fun fact or some math.";
+}
+
+
+/* ---------------- INPUT HANDLER ---------------- */
+
+var turtleIsTalking = false;
+
+function processInput() {
+
+    // BLOCK INPUT WHILE TURTLE IS TALKING
+    if (turtleIsTalking) return;
+
+    var msg = inputBox.value;
+
+    // BASIC EMPTY CHECK (IE6-safe)
+    if (msg == "" || msg == " " || msg == "  ") return;
+
+    var userName = nameBox.value || "User";
+    inputBox.value = "";
+
+    addMessage(userName, msg);
+
+    // TURTLE STARTS TALKING → DISABLE INPUT
+    turtleIsTalking = true;
+    inputBox.disabled = true;
+    inputBox.style.backgroundColor = "#dddddd";
+
+    turtleLoading(msg, function() {
+
+        addMessage("Turtle", turtleReply(msg, userName));
+        saveChats();
+
+        // TURTLE FINISHED → ENABLE INPUT
+        turtleIsTalking = false;
+        inputBox.disabled = false;
+        inputBox.style.backgroundColor = "";
+        inputBox.focus();
+    });
+}
+
+inputBox.onkeydown = function(e) {
+    e = e || window.event;
+
+    // ENTER key
+    if (e.keyCode == 13) {
+        processInput();
+    }
+};
+
+sendBtn.onclick = function() {
+    processInput();
+};
+
+
+
+
+/* ---------------- NEW CHAT ---------------- */
+
+newChatBtn.onclick = function() {
+    var index = createChat("Chat " + (chats.length));
+    currentChatIndex = index;
+    renderChatList();
+    renderChat(index);
+    saveChats();
+};
+
+/* ---------------- RENAME CHAT ---------------- */
+
+renameChatBtn.onclick = function() {
+    var chat = getCurrentChat();
+    var newName = prompt("What is the new name?");
+
+    if (newName === null) return;
+
+    newName = newName.replace(/^\s+|\s+$/g, "");
+
+    if (newName.length == 0) return;
+
+    chat.title = newName;
+    renderChatList();
+    saveChats();
+};
+
+/* ---------------- DELETE CHAT ---------------- */
+
+deleteChatBtn.onclick = function() {
+    var chat = getCurrentChat();
+
+    var confirmDelete = confirm(
+        "Are you sure you want to delete this chat? This will remove everything saved and cannot be undone."
+    );
+
+    if (!confirmDelete) return;
+
+    chat.title = "Deleting...";
+    renderChatList();
+
+    var frames = ["-", "\\", "|", "/"];
+    var totalFrames = frames.length * 6;
+    var index = 0;
+
+    chatBox.innerHTML = "Deleting chat... <span id='deleteLoader'>-</span><br>";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    function nextFrame() {
+        var loader = document.getElementById("deleteLoader");
+        if (!loader) return;
+
+        loader.innerHTML = frames[index % frames.length];
+        index++;
+
+        if (index < totalFrames) {
+            setTimeout(nextFrame, 220);
+        } else {
+            chats.splice(currentChatIndex, 1);
+
+            if (chats.length == 0) {
+                var newIndex = createChat("Chat 1");
+                openChat(newIndex);
+                saveChats();
+                return;
+            }
+
+            currentChatIndex = 0;
+            renderChatList();
+            openChat(0);
+            saveChats();
+        }
+    }
+
+    nextFrame();
+};
+
+/* ---------------- STARTUP ---------------- */
+
+loadChats();
+
+if (chats.length == 0) {
+    createChat("Chat 1");
+}
+
+renderChatList();
+renderChat(0);
+</script>
+
+</body>
+</html>
