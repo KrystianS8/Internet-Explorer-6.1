@@ -7,6 +7,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Win32;
+using System.Net;
 using System.Net.Http;
 
 // Assembly branding metadata
@@ -25,6 +26,9 @@ namespace SingleFileTridentBrowser
         [STAThread]
         static void Main(string[] args)
         {
+            // Force TLS 1.2 so HttpClient can communicate securely with GitHub API
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -62,6 +66,7 @@ namespace SingleFileTridentBrowser
         private ToolStripMenuItem menuInternetOptions;
         private ToolStripMenuItem menuSetHomepage;
         private ToolStripMenuItem menuSetDefaultBrowser;
+        private ToolStripMenuItem menuCheckForUpdates;
 
         // StatusStrip components
         private StatusStrip statusStrip;
@@ -104,8 +109,8 @@ namespace SingleFileTridentBrowser
             LoadSettings();
             LoadHistoryFromFile();
 
-            // Trigger background update check
-            CheckForUpdates();
+            // Trigger background update check automatically on startup
+            CheckForUpdates(false);
 
             // Check default browser status once window is shown
             this.Shown += (s, e) => {
@@ -132,11 +137,12 @@ namespace SingleFileTridentBrowser
             menuWebApps.DropDownItems.Add(menuTurtle);
             menuWebApps.DropDownItems.Add(menuHtmlGameMaker);
 
-            // Options menu -> Internet Options, Set Homepage & Set Default Browser
+            // Options menu -> Internet Options, Set Homepage, Set Default Browser & Check For Updates
             menuOptions = new ToolStripMenuItem("Options");
             menuInternetOptions = new ToolStripMenuItem("Internet Options...");
             menuSetHomepage = new ToolStripMenuItem("Set Current Page as Homepage");
             menuSetDefaultBrowser = new ToolStripMenuItem("Set Default Browser");
+            menuCheckForUpdates = new ToolStripMenuItem("Check For Updates");
 
             menuInternetOptions.Click += (s, e) => {
                 try
@@ -172,9 +178,16 @@ namespace SingleFileTridentBrowser
                 MessageBox.Show("Internet Explorer has been set as your default browser for all supported web extensions.", "Internet Explorer", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
 
+            menuCheckForUpdates.Click += (s, e) => {
+                // Manual check triggered by user (shows up-to-date dialog if no updates found)
+                CheckForUpdates(true);
+            };
+
             menuOptions.DropDownItems.Add(menuInternetOptions);
             menuOptions.DropDownItems.Add(menuSetHomepage);
             menuOptions.DropDownItems.Add(menuSetDefaultBrowser);
+            menuOptions.DropDownItems.Add(new ToolStripSeparator());
+            menuOptions.DropDownItems.Add(menuCheckForUpdates);
 
             // Add menus to Strip
             menuStrip.Items.Add(menuBrowser);
@@ -351,6 +364,11 @@ namespace SingleFileTridentBrowser
                         return savedVersion;
                     }
                 }
+                else
+                {
+                    // Automatically create version.txt on first launch with initial v1.0
+                    File.WriteAllText(versionFilePath, "v1.0");
+                }
             }
             catch
             {
@@ -359,10 +377,16 @@ namespace SingleFileTridentBrowser
             return "v1.0"; // Default initial version
         }
 
-        private async void CheckForUpdates()
+        private async void CheckForUpdates(bool manualCheck)
         {
             try
             {
+                if (manualCheck)
+                {
+                    lblStatus.Text = "Checking for updates...";
+                    progressBar.Visible = true;
+                }
+
                 string repoOwner = "KrystianS8";
                 string repoName = "Internet-Explorer-6.1";
                 string apiUrl = "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/releases/latest";
@@ -386,7 +410,7 @@ namespace SingleFileTridentBrowser
                         if (latestVersion != currentVersion)
                         {
                             DialogResult result = MessageBox.Show(
-                                "A new source update (" + latestVersion + ") is available! Would you like to download and update the source files now?\n\n- Click **Yes** to update, replace files, and restart.\n- Click **No** to skip.",
+                                "A new source update (" + latestVersion + ") is available! Would you like to download and update the source files now?\n\n- Click Yes to update, replace files, and restart.\n- Click No to skip.",
                                 "Update Available",
                                 MessageBoxButtons.YesNo,
                                 MessageBoxIcon.Information);
@@ -451,12 +475,24 @@ namespace SingleFileTridentBrowser
                                 }
                             }
                         }
+                        else if (manualCheck)
+                        {
+                            MessageBox.Show("You are currently running the latest version (" + currentVersion + ").", "No Updates Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                // Fail silently or log if needed
+                if (manualCheck)
+                {
+                    MessageBox.Show("Unable to check for updates. Please check your internet connection.", "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            finally
+            {
+                lblStatus.Text = "Ready";
+                progressBar.Visible = false;
             }
         }
 
