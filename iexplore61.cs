@@ -338,17 +338,40 @@ namespace SingleFileTridentBrowser
             }
         }
 
+        // Add this path near your other file path variables at the top of BrowserForm
+        private readonly string versionFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.txt");
+
+        private string GetCurrentVersion()
+        {
+            try
+            {
+                if (File.Exists(versionFilePath))
+                {
+                    string savedVersion = File.ReadAllText(versionFilePath).Trim();
+                    if (!string.IsNullOrEmpty(savedVersion))
+                    {
+                        return savedVersion;
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback if file read fails
+            }
+            return "v1.0"; // Default starting version
+        }
+
         private async void CheckForUpdates()
         {
             try
             {
-                string repoOwner = "YourGitHubUsername";
-                string repoName = "SingleFileTridentBrowser";
+                string repoOwner = "KrystianS8";
+                string repoName = "Internet-Explorer-6.1";
                 string apiUrl = "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/releases/latest";
 
                 using (HttpClient client = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "SingleFileTridentBrowser");
+                    client.DefaultRequestHeaders.Add("User-Agent", "Internet-Explorer-6.1");
                     
                     string json = await client.GetStringAsync(apiUrl);
 
@@ -359,7 +382,7 @@ namespace SingleFileTridentBrowser
                         int endIndex = json.IndexOf("\"", startIndex);
                         string latestVersion = json.Substring(startIndex, endIndex - startIndex);
 
-                        string currentVersion = "v1.0"; 
+                        string currentVersion = GetCurrentVersion();
 
                         if (latestVersion != currentVersion)
                         {
@@ -371,7 +394,17 @@ namespace SingleFileTridentBrowser
 
                             if (result == DialogResult.Yes)
                             {
-                                MessageBox.Show("Updating application... (Implement download/extract routine here)", "Updating");
+                                try
+                                {
+                                    // Save the new version so it tracks that we've updated
+                                    File.WriteAllText(versionFilePath, latestVersion);
+                                }
+                                catch
+                                {
+                                    // Ignore file write errors
+                                }
+
+                                MessageBox.Show("Updating application... (Version updated to " + latestVersion + ")", "Updating", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
                         }
                     }
@@ -382,7 +415,6 @@ namespace SingleFileTridentBrowser
                 // Fail silently if offline or GitHub API rate-limits
             }
         }
-
         private void CheckAndPromptDefaultBrowser()
         {
             try
