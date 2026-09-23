@@ -73,6 +73,7 @@ namespace SingleFileTridentBrowser
         private readonly string historyFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "history.txt");
         private readonly string homepageFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "homepage.txt");
         private readonly string defaultCheckFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "default_check.txt");
+        private readonly string versionFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.txt");
         private readonly string sourceDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source");
         private string currentHomepage = "http://welcome.com";
 
@@ -338,9 +339,6 @@ namespace SingleFileTridentBrowser
             }
         }
 
-        // Add this path near your other file path variables at the top of BrowserForm
-        private readonly string versionFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.txt");
-
         private string GetCurrentVersion()
         {
             try
@@ -356,9 +354,9 @@ namespace SingleFileTridentBrowser
             }
             catch
             {
-                // Fallback if file read fails
+                // Fallback
             }
-            return "v1.0"; // Default starting version
+            return "v1.0"; // Default initial version
         }
 
         private async void CheckForUpdates()
@@ -375,6 +373,7 @@ namespace SingleFileTridentBrowser
                     
                     string json = await client.GetStringAsync(apiUrl);
 
+                    // 1. Extract the tag name (version)
                     int tagIndex = json.IndexOf("\"tag_name\":\"");
                     if (tagIndex != -1)
                     {
@@ -387,34 +386,80 @@ namespace SingleFileTridentBrowser
                         if (latestVersion != currentVersion)
                         {
                             DialogResult result = MessageBox.Show(
-                                "A new update (" + latestVersion + ") is available! Would you like to download and install it now?\n\n- Click **Yes** to update and restart.\n- Click **No** to skip this update.\n- Click **Cancel** to ignore updates for now.",
+                                "A new source update (" + latestVersion + ") is available! Would you like to download and update the source files now?\n\n- Click **Yes** to update, replace files, and restart.\n- Click **No** to skip.",
                                 "Update Available",
-                                MessageBoxButtons.YesNoCancel,
+                                MessageBoxButtons.YesNo,
                                 MessageBoxIcon.Information);
 
                             if (result == DialogResult.Yes)
                             {
-                                try
+                                // 2. Extract the zipball_url for the repository source code at this release tag
+                                int zipIndex = json.IndexOf("\"zipball_url\":\"");
+                                if (zipIndex != -1)
                                 {
-                                    // Save the new version so it tracks that we've updated
-                                    File.WriteAllText(versionFilePath, latestVersion);
-                                }
-                                catch
-                                {
-                                    // Ignore file write errors
-                                }
+                                    int zipStart = zipIndex + 15;
+                                    int zipEnd = json.IndexOf("\"", zipStart);
+                                    string zipUrl = json.Substring(zipStart, zipEnd - zipStart);
 
-                                MessageBox.Show("Updating application... (Version updated to " + latestVersion + ")", "Updating", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    lblStatus.Text = "Downloading repository source...";
+                                    progressBar.Visible = true;
+
+                                    // 3. Download zip bytes to Temp folder
+                                    byte[] zipBytes = await client.GetByteArrayAsync(zipUrl);
+                                    string tempZipPath = Path.Combine(Path.GetTempPath(), "ie_update.zip");
+                                    File.WriteAllBytes(tempZipPath, zipBytes);
+
+                                    // 4. Save the new version locally
+                                    try
+                                    {
+                                        File.WriteAllText(versionFilePath, latestVersion);
+                                    }
+                                    catch { }
+
+                                    // 5. Create a temporary PowerShell update script
+                                    string targetDirectory = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+                                    string tempScriptPath = Path.Combine(Path.GetTempPath(), "ie_update.ps1");
+
+                                    string psScriptContent = 
+                                        "Start-Sleep -Seconds 2\n" +
+                                        "Expand-Archive -Path '" + tempZipPath + "' -DestinationPath '" + Path.GetTempPath() + "ie_extract' -Force\n" +
+                                        "$innerFolder = Get-ChildItem '" + Path.GetTempPath() + "ie_extract' | Select-Object -First 1\n" +
+                                        "Copy-Item -Path \"$($innerFolder.FullName)\\*\" -Destination '" + targetDirectory + "' -Recurse -Force\n" +
+                                        "Remove-Item '" + tempZipPath + "' -Force\n" +
+                                        "Remove-Item '" + Path.GetTempPath() + "ie_extract' -Recurse -Force\n" +
+                                        "Start-Process '" + Path.Combine(targetDirectory, "iexplore61.exe") + "'\n" +
+                                        "Remove-Item $MyInvocation.MyCommand.Path -Force";
+
+                                    File.WriteAllText(tempScriptPath, psScriptContent);
+
+                                    MessageBox.Show("Source downloaded successfully! The browser will now close, update its files, and restart.", "Updating", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                    // 6. Launch PowerShell script in the background and exit application
+                                    Process.Start(new ProcessStartInfo
+                                    {
+                                        FileName = "powershell.exe",
+                                        Arguments = "-ExecutionPolicy Bypass -File \"" + tempScriptPath + "\"",
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false
+                                    });
+
+                                    Application.Exit();
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Could not locate the zipball source URL in the release JSON.", "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
                             }
                         }
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fail silently if offline or GitHub API rate-limits
+                // Fail silently or log if needed
             }
         }
+
         private void CheckAndPromptDefaultBrowser()
         {
             try
