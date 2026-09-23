@@ -9,8 +9,8 @@ using System.Reflection;
 using Microsoft.Win32;
 using System.Net;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 
-// Assembly branding metadata
 [assembly: AssemblyTitle("Internet Explorer 6.1")]
 [assembly: AssemblyDescription("Internet Explorer Web Browser")]
 [assembly: AssemblyCompany("Internet Surfers")]
@@ -24,331 +24,301 @@ namespace SingleFileTridentBrowser
     static class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        static void Main(string[] _0x1a)
         {
-            // Force TLS 1.2 so HttpClient can communicate securely with GitHub API
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            string initialTarget = null;
-            if (args != null && args.Length > 0)
+            string _0x2b = null;
+            if (_0x1a != null && _0x1a.Length > 0)
             {
-                initialTarget = args[0];
+                _0x2b = _0x1a[0];
             }
 
-            Application.Run(new BrowserForm(initialTarget));
+            Application.Run(new BrowserForm(_0x2b));
         }
     }
 
     public class BrowserForm : Form
     {
-        private WebBrowser webBrowser;
-        private TextBox txtUrl;
-        private Button btnBack;
-        private Button btnForward;
-        private Button btnRefresh;
-        private Button btnStop;
-        private Button btnHome;
-        private Button btnGo;
+        private WebBrowser _0x3c;
+        private TextBox _0x4d;
+        private Button _0x5e;
+        private Button _0x6f;
+        private Button _0x70;
+        private Button _0x81;
+        private Button _0x92;
+        private Button _0xa3;
         
-        // MenuStrip components
-        private MenuStrip menuStrip;
-        private ToolStripMenuItem menuBrowser;
-        private ToolStripMenuItem menuHistory;
+        private MenuStrip _0xb4;
+        private ToolStripMenuItem _0xc5;
+        private ToolStripMenuItem _0xd6;
         
-        private ToolStripMenuItem menuWebApps;
-        private ToolStripMenuItem menuTurtle;
-        private ToolStripMenuItem menuHtmlGameMaker;
+        private ToolStripMenuItem _0xe7;
+        private ToolStripMenuItem _0xf8;
+        private ToolStripMenuItem _0x09;
 
-        private ToolStripMenuItem menuOptions;
-        private ToolStripMenuItem menuInternetOptions;
-        private ToolStripMenuItem menuSetHomepage;
-        private ToolStripMenuItem menuSetDefaultBrowser;
-        private ToolStripMenuItem menuCheckForUpdates;
+        private ToolStripMenuItem _0x1a2;
+        private ToolStripMenuItem _0x2b3;
+        private ToolStripMenuItem _0x3c4;
+        private ToolStripMenuItem _0x4d5;
+        private ToolStripMenuItem _0x5e6;
 
-        // StatusStrip components
-        private StatusStrip statusStrip;
-        private ToolStripStatusLabel lblStatus;
-        private ToolStripProgressBar progressBar;
+        private StatusStrip _0x6f7;
+        private ToolStripStatusLabel _0x708;
+        private ToolStripProgressBar _0x819;
 
-        // History, Homepage, Settings paths & files
-        private List<string> historyList = new List<string>();
-        private readonly string historyFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "history.txt");
-        private readonly string homepageFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "homepage.txt");
-        private readonly string defaultCheckFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "default_check.txt");
-        private readonly string versionFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.txt");
-        private readonly string sourceDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source");
-        private string currentHomepage = "http://welcome.com";
+        private List<string> _0x92a = new List<string>();
+        private readonly string _0xa3b = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "\x68\x69\x73\x74\x6f\x72\x79\x2e\x74\x78\x74");
+        private readonly string _0xb4c = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "\x68\x6f\x6d\x65\x70\x61\x67\x65\x2e\x74\x78\x74");
+        private readonly string _0xc5d = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "\x64\x65\x66\x61\x75\x6c\x74\x5f\x63\x68\x65\x63\x6b\x2e\x74\x78\x74");
+        private readonly string _0xd6e = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "\x76\x65\x72\x73\x69\x6f\x6e\x2e\x74\x78\x74");
+        private readonly string _0xe7f = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "\x73\x6f\x75\x72\x63\x65");
+        private string _0xf80 = "\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d";
 
-        public BrowserForm(string startupUrl = null)
+        public BrowserForm(string _0x09a = null)
         {
-            // Window settings
-            this.Text = "Internet Explorer 6.1";
+            this.Text = "\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72\x20\x36\x2e\x31";
             this.Width = 1000;
             this.Height = 700;
 
-            // Load custom icon from the 'source' folder or working directory
             try
             {
-                string iconPath = Path.Combine(sourceDir, "ieicon.ico");
-                if (!File.Exists(iconPath)) iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ieicon.ico");
+                string _0x1a1 = Path.Combine(_0xe7f, "\x69\x65\x69\x63\x6f\x6e\x2e\x69\x63\x6f");
+                if (!File.Exists(_0x1a1)) _0x1a1 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "\x69\x65\x69\x63\x6f\x6e\x2e\x69\x63\x6f");
 
-                if (File.Exists(iconPath))
+                if (File.Exists(_0x1a1))
                 {
-                    this.Icon = new Icon(iconPath);
+                    this.Icon = new Icon(_0x1a1);
                 }
             }
-            catch
-            {
-                // Ignore if icon fails to load
-            }
+            catch { }
 
-            // Load saved settings & history on startup
             LoadSettings();
             LoadHistoryFromFile();
-
-            // Trigger background update check automatically on startup
             CheckForUpdates(false);
 
-            // Check default browser status once window is shown
-            this.Shown += (s, e) => {
+            this.Shown += (_0x2b2, _0x3c3) => {
                 CheckAndPromptDefaultBrowser();
             };
 
-            // Main MenuStrip
-            menuStrip = new MenuStrip();
+            _0xb4 = new MenuStrip();
             
-            // Browser -> History menu
-            menuBrowser = new ToolStripMenuItem("Browser");
-            menuHistory = new ToolStripMenuItem("History");
-            menuHistory.DropDownOpening += (s, e) => UpdateHistoryMenu();
-            menuBrowser.DropDownItems.Add(menuHistory);
+            _0xc5 = new ToolStripMenuItem("\x42\x72\x6f\x77\x73\x65\x72");
+            _0xd6 = new ToolStripMenuItem("\x48\x69\x73\x74\x6f\x72\x79");
+            _0xd6.DropDownOpening += (_0x4d4, _0x5e5) => UpdateHistoryMenu();
+            _0xc5.DropDownItems.Add(_0xd6);
 
-            // Web Apps menu -> Turtle & HTML Game Maker
-            menuWebApps = new ToolStripMenuItem("Web Apps");
-            menuTurtle = new ToolStripMenuItem("Turtle");
-            menuHtmlGameMaker = new ToolStripMenuItem("HTML Game Maker");
+            _0xe7 = new ToolStripMenuItem("\x57\x65\x62\x20\x41\x70\x70\x73");
+            _0xf8 = new ToolStripMenuItem("\x54\x75\x72\x74\x6c\x65");
+            _0x09 = new ToolStripMenuItem("\x48\x54\x4d\x4c\x20\x47\x61\x6d\x65\x20\x4d\x61\x6b\x65\x72");
 
-            menuTurtle.Click += (s, e) => NavigateToWebApp("http://turtle.chatbot/", "turtle.html");
-            menuHtmlGameMaker.Click += (s, e) => NavigateToWebApp("http://htmlgamemaker.org/", "maker.html");
+            _0xf8.Click += (_0x6f6, _0x707) => NavigateToWebApp("\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f", "\x74\x75\x72\x74\x6c\x65\x2e\x68\x74\x6d\x6c");
+            _0x09.Click += (_0x818, _0x929) => NavigateToWebApp("\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f", "\x6d\x61\x6b\x65\x72\x2e\x68\x74\x6d\x6c");
 
-            menuWebApps.DropDownItems.Add(menuTurtle);
-            menuWebApps.DropDownItems.Add(menuHtmlGameMaker);
+            _0xe7.DropDownItems.Add(_0xf8);
+            _0xe7.DropDownItems.Add(_0x09);
 
-            // Options menu -> Internet Options, Set Homepage, Set Default Browser & Check For Updates
-            menuOptions = new ToolStripMenuItem("Options");
-            menuInternetOptions = new ToolStripMenuItem("Internet Options...");
-            menuSetHomepage = new ToolStripMenuItem("Set Current Page as Homepage");
-            menuSetDefaultBrowser = new ToolStripMenuItem("Set Default Browser");
-            menuCheckForUpdates = new ToolStripMenuItem("Check For Updates");
+            _0x1a2 = new ToolStripMenuItem("\x4f\x70\x74\x69\x6f\x6e\x73");
+            _0x2b3 = new ToolStripMenuItem("\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x4f\x70\x74\x69\x6f\x6e\x73\x2e\x2e\x2e");
+            _0x3c4 = new ToolStripMenuItem("\x53\x65\x74\x20\x43\x75\x72\x72\x65\x6e\x74\x20\x50\x61\x67\x65\x20\x61\x73\x20\x48\x6f\x6d\x65\x70\x61\x67\x65");
+            _0x4d5 = new ToolStripMenuItem("\x53\x65\x74\x20\x44\x65\x66\x61\x75\x6c\x74\x20\x42\x72\x6f\x77\x73\x65\x72");
+            _0x5e6 = new ToolStripMenuItem("\x43\x68\x65\x63\x6b\x20\x46\x6f\x72\x20\x55\x70\x64\x61\x74\x65\x73");
 
-            menuInternetOptions.Click += (s, e) => {
+            _0x2b3.Click += (_0xa3a, _0xb4b) => {
                 try
                 {
-                    Process.Start("inetcpl.cpl");
+                    Process.Start(new ProcessStartInfo("\x69\x6e\x65\x74\x63\x70\x6c\x2e\x63\x70\x6c") { UseShellExecute = true });
                 }
                 catch
                 {
-                    MessageBox.Show("Unable to open Windows Internet Options.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("\x55\x6e\x61\x62\x6c\x65\x20\x74\x6f\x20\x6f\x70\x65\x6e\x20\x57\x69\x6e\x64\x6f\x77\x73\x20\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x4f\x70\x74\x69\x6f\x6e\x73\x2e", "\x45\x72\x72\x6f\x72", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
 
-            menuSetHomepage.Click += (s, e) => {
-                if (webBrowser.Url != null)
+            _0x3c4.Click += (_0xc5c, _0xd6d) => {
+                if (_0x3c.Url != null)
                 {
-                    string target = txtUrl.Text;
-                    if (target.Equals("http://welcome.com", StringComparison.OrdinalIgnoreCase))
-                        currentHomepage = "http://welcome.com";
-                    else if (target.Equals("http://turtle.chatbot/", StringComparison.OrdinalIgnoreCase))
-                        currentHomepage = "http://turtle.chatbot/";
-                    else if (target.Equals("http://htmlgamemaker.org/", StringComparison.OrdinalIgnoreCase))
-                        currentHomepage = "http://htmlgamemaker.org/";
+                    string _0xe7e = _0x4d.Text;
+                    if (_0xe7e.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d", StringComparison.OrdinalIgnoreCase))
+                        _0xf80 = "\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d";
+                    else if (_0xe7e.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f", StringComparison.OrdinalIgnoreCase))
+                        _0xf80 = "\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f";
+                    else if (_0xe7e.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f", StringComparison.OrdinalIgnoreCase))
+                        _0xf80 = "\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f";
                     else
-                        currentHomepage = webBrowser.Url.ToString();
+                        _0xf80 = _0x3c.Url.ToString();
 
                     SaveSettings();
-                    MessageBox.Show("Homepage updated to:\n" + currentHomepage, "Homepage Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("\x48\x6f\x6d\x65\x70\x61\x67\x65\x20\x75\x70\x64\x61\x74\x65\x64\x20\x74\x6f\x3a\n" + _0xf80, "\x48\x6f\x6d\x65\x70\x61\x67\x65\x20\x53\x61\x76\x65\x64", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             };
 
-            menuSetDefaultBrowser.Click += (s, e) => {
+            _0x4d5.Click += (_0xf8f, _0x090) => {
                 SetAsDefaultBrowser();
-                MessageBox.Show("Internet Explorer has been set as your default browser for all supported web extensions.", "Internet Explorer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72\x20\x68\x61\x73\x20\x62\x65\x65\x6e\x20\x73\x65\x74\x20\x61\x73\x20\x79\x6f\x75\x72\x20\x64\x65\x66\x61\x75\x6c\x74\x20\x62\x72\x6f\x77\x73\x65\x72\x20\x66\x6f\x72\x20\x61\x6c\x6c\x20\x73\x75\x70\x70\x6f\x72\x74\x65\x64\x20\x77\x65\x62\x20\x65\x78\x74\x65\x6e\x73\x69\x6f\x6e\x73\x2e", "\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
 
-            menuCheckForUpdates.Click += (s, e) => {
-                // Manual check triggered by user (shows up-to-date dialog if no updates found)
+            _0x5e6.Click += (_0x1a2a, _0x2b3b) => {
                 CheckForUpdates(true);
             };
 
-            menuOptions.DropDownItems.Add(menuInternetOptions);
-            menuOptions.DropDownItems.Add(menuSetHomepage);
-            menuOptions.DropDownItems.Add(menuSetDefaultBrowser);
-            menuOptions.DropDownItems.Add(new ToolStripSeparator());
-            menuOptions.DropDownItems.Add(menuCheckForUpdates);
+            _0x1a2.DropDownItems.Add(_0x2b3);
+            _0x1a2.DropDownItems.Add(_0x3c4);
+            _0x1a2.DropDownItems.Add(_0x4d5);
+            _0x1a2.DropDownItems.Add(new ToolStripSeparator());
+            _0x1a2.DropDownItems.Add(_0x5e6);
 
-            // Add menus to Strip
-            menuStrip.Items.Add(menuBrowser);
-            menuStrip.Items.Add(menuWebApps);
-            menuStrip.Items.Add(menuOptions);
-            this.MainMenuStrip = menuStrip;
-            this.Controls.Add(menuStrip);
+            _0xb4.Items.Add(_0xc5);
+            _0xb4.Items.Add(_0xe7);
+            _0xb4.Items.Add(_0x1a2);
+            this.MainMenuStrip = _0xb4;
+            this.Controls.Add(_0xb4);
 
-            // StatusStrip at the bottom with a progress bar on the right
-            statusStrip = new StatusStrip();
-            lblStatus = new ToolStripStatusLabel("Ready");
-            lblStatus.Spring = true;
-            lblStatus.TextAlign = ContentAlignment.MiddleLeft;
+            _0x6f7 = new StatusStrip();
+            _0x708 = new ToolStripStatusLabel("\x52\x65\x61\x64\x79");
+            _0x708.Spring = true;
+            _0x708.TextAlign = ContentAlignment.MiddleLeft;
 
-            progressBar = new ToolStripProgressBar();
-            progressBar.Size = new Size(120, 16);
-            progressBar.Style = ProgressBarStyle.Marquee;
-            progressBar.Visible = false;
+            _0x819 = new ToolStripProgressBar();
+            _0x819.Size = new Size(120, 16);
+            _0x819.Style = ProgressBarStyle.Marquee;
+            _0x819.Visible = false;
 
-            statusStrip.Items.Add(lblStatus);
-            statusStrip.Items.Add(progressBar);
-            this.Controls.Add(statusStrip);
+            _0x6f7.Items.Add(_0x708);
+            _0x6f7.Items.Add(_0x819);
+            this.Controls.Add(_0x6f7);
 
-            // Top container panel for navigation controls
-            Panel topPanel = new Panel();
-            topPanel.Dock = DockStyle.Top;
-            topPanel.Height = 45;
-            topPanel.Padding = new Padding(5);
+            Panel _0x3c4c = new Panel();
+            _0x3c4c.Dock = DockStyle.Top;
+            _0x3c4c.Height = 45;
+            _0x3c4c.Padding = new Padding(5);
 
-            // Back Button
-            btnBack = new Button();
-            btnBack.Text = "◀";
-            btnBack.Width = 35;
-            btnBack.Location = new Point(8, 8);
-            btnBack.Click += (s, e) => { if (webBrowser.CanGoBack) webBrowser.GoBack(); };
+            _0x5e = new Button();
+            _0x5e.Text = "\u25c0";
+            _0x5e.Width = 35;
+            _0x5e.Location = new Point(8, 8);
+            _0x5e.Click += (_0x3c3c, _0x4d4d) => { if (_0x3c.CanGoBack) _0x3c.GoBack(); };
 
-            // Forward Button
-            btnForward = new Button();
-            btnForward.Text = "▶";
-            btnForward.Width = 35;
-            btnForward.Location = new Point(47, 8);
-            btnForward.Click += (s, e) => { if (webBrowser.CanGoForward) webBrowser.GoForward(); };
+            _0x6f = new Button();
+            _0x6f.Text = "\u25b6";
+            _0x6f.Width = 35;
+            _0x6f.Location = new Point(47, 8);
+            _0x6f.Click += (_0x5e5e, _0x6f6f) => { if (_0x3c.CanGoForward) _0x3c.GoForward(); };
 
-            // Refresh Button
-            btnRefresh = new Button();
-            btnRefresh.Text = "↻";
-            btnRefresh.Width = 35;
-            btnRefresh.Location = new Point(86, 8);
-            btnRefresh.Click += (s, e) => webBrowser.Refresh();
+            _0x70 = new Button();
+            _0x70.Text = "\u21bb";
+            _0x70.Width = 35;
+            _0x70.Location = new Point(86, 8);
+            _0x70.Click += (_0x7070, _0x8181) => _0x3c.Refresh();
 
-            // Stop Button
-            btnStop = new Button();
-            btnStop.Text = "✕";
-            btnStop.Width = 35;
-            btnStop.Location = new Point(125, 8);
-            btnStop.Click += (s, e) => webBrowser.Stop();
+            _0x81 = new Button();
+            _0x81.Text = "\u2715";
+            _0x81.Width = 35;
+            _0x81.Location = new Point(125, 8);
+            _0x81.Click += (_0x9292, _0xa3a3) => _0x3c.Stop();
 
-            // Home Button
-            btnHome = new Button();
-            btnHome.Text = "⌂";
-            btnHome.Width = 35;
-            btnHome.Location = new Point(164, 8);
-            btnHome.Click += (s, e) => NavigateToUrlString(currentHomepage);
+            _0x92 = new Button();
+            _0x92.Text = "\u2302";
+            _0x92.Width = 35;
+            _0x92.Location = new Point(164, 8);
+            _0x92.Click += (_0xb4b4, _0xc5c5) => NavigateToUrlString(_0xf80);
 
-            // Go Button
-            btnGo = new Button();
-            btnGo.Text = "Go";
-            btnGo.Width = 55;
-            btnGo.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnGo.Location = new Point(this.ClientSize.Width - 63, 8);
-            btnGo.Click += (s, e) => NavigateToUrl();
+            _0xa3 = new Button();
+            _0xa3.Text = "\x47\x6f";
+            _0xa3.Width = 55;
+            _0xa3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            _0xa3.Location = new Point(this.ClientSize.Width - 63, 8);
+            _0xa3.Click += (_0xd6d6, _0xe7e7) => NavigateToUrl();
 
-            // Address Bar TextBox
-            txtUrl = new TextBox();
-            txtUrl.Location = new Point(204, 10);
-            txtUrl.Width = this.ClientSize.Width - 274;
-            txtUrl.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            txtUrl.Font = new Font("Segoe UI", 10F);
-            txtUrl.KeyDown += (s, e) => {
-                if (e.KeyCode == Keys.Enter)
+            _0x4d = new TextBox();
+            _0x4d.Location = new Point(204, 10);
+            _0x4d.Width = this.ClientSize.Width - 274;
+            _0x4d.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            _0x4d.Font = new Font("\x53\x65\x67\x6f\x65\x20\x55\x49", 10F);
+            _0x4d.KeyDown += (_0xf8f8, _0x0909) => {
+                if (_0x0909.KeyCode == Keys.Enter)
                 {
                     NavigateToUrl();
-                    e.SuppressKeyPress = true;
+                    _0x0909.SuppressKeyPress = true;
                 }
             };
 
-            topPanel.Controls.Add(btnBack);
-            topPanel.Controls.Add(btnForward);
-            topPanel.Controls.Add(btnRefresh);
-            topPanel.Controls.Add(btnStop);
-            topPanel.Controls.Add(btnHome);
-            topPanel.Controls.Add(txtUrl);
-            topPanel.Controls.Add(btnGo);
+            _0x3c4c.Controls.Add(_0x5e);
+            _0x3c4c.Controls.Add(_0x6f);
+            _0x3c4c.Controls.Add(_0x70);
+            _0x3c4c.Controls.Add(_0x81);
+            _0x3c4c.Controls.Add(_0x92);
+            _0x3c4c.Controls.Add(_0x4d);
+            _0x3c4c.Controls.Add(_0xa3);
 
-            // Initialize the WebBrowser
-            webBrowser = new WebBrowser();
-            webBrowser.Dock = DockStyle.Fill;
-            webBrowser.ScriptErrorsSuppressed = true;
+            _0x3c = new WebBrowser();
+            _0x3c.Dock = DockStyle.Fill;
+            _0x3c.ScriptErrorsSuppressed = true;
             
-            webBrowser.Navigating += (s, e) => {
-                if (e.Url != null)
+            _0x3c.Navigating += (_0x1a1a, _0x2b2b) => {
+                if (_0x2b2b.Url != null)
                 {
-                    lblStatus.Text = "Loading: " + e.Url.ToString();
-                    progressBar.Visible = true;
+                    _0x708.Text = "\x4c\x6f\x61\x64\x69\x6e\x67\x3a\x20" + _0x2b2b.Url.ToString();
+                    _0x819.Visible = true;
                 }
             };
             
-            webBrowser.Navigated += (s, e) => {
-                if (webBrowser.Url != null)
+            _0x3c.Navigated += (_0x3c3c, _0x4d4d) => {
+                if (_0x3c.Url != null)
                 {
-                    string currentUrl = webBrowser.Url.ToString();
+                    string _0x5e5e = _0x3c.Url.ToString();
                     
-                    if (currentUrl.EndsWith("welcome.html", StringComparison.OrdinalIgnoreCase))
+                    if (_0x5e5e.EndsWith("\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x68\x74\x6d\x6c", StringComparison.OrdinalIgnoreCase))
                     {
-                        txtUrl.Text = "http://welcome.com";
-                        AddUrlToHistory("http://welcome.com");
+                        _0x4d.Text = "\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d";
+                        AddUrlToHistory("\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d");
                     }
-                    else if (currentUrl.EndsWith("turtle.html", StringComparison.OrdinalIgnoreCase))
+                    else if (_0x5e5e.EndsWith("\x74\x75\x72\x74\x6c\x65\x2e\x68\x74\x6d\x6c", StringComparison.OrdinalIgnoreCase))
                     {
-                        txtUrl.Text = "http://turtle.chatbot/";
-                        AddUrlToHistory("http://turtle.chatbot/");
+                        _0x4d.Text = "\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f";
+                        AddUrlToHistory("\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f");
                     }
-                    else if (currentUrl.EndsWith("maker.html", StringComparison.OrdinalIgnoreCase))
+                    else if (_0x5e5e.EndsWith("\x6d\x61\x6b\x65\x72\x2e\x68\x74\x6d\x6c", StringComparison.OrdinalIgnoreCase))
                     {
-                        txtUrl.Text = "http://htmlgamemaker.org/";
-                        AddUrlToHistory("http://htmlgamemaker.org/");
+                        _0x4d.Text = "\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f";
+                        AddUrlToHistory("\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f");
                     }
                     else
                     {
-                        txtUrl.Text = currentUrl;
-                        AddUrlToHistory(currentUrl);
+                        _0x4d.Text = _0x5e5e;
+                        AddUrlToHistory(_0x5e5e);
                     }
                 }
             };
 
-            webBrowser.DocumentCompleted += (s, e) => {
-                lblStatus.Text = "Ready";
-                progressBar.Visible = false;
+            _0x3c.DocumentCompleted += (_0x6f6f, _0x7070) => {
+                _0x708.Text = "\x52\x65\x61\x64\x79";
+                _0x819.Visible = false;
 
-                if (webBrowser.Document != null && !string.IsNullOrEmpty(webBrowser.Document.Title))
+                if (_0x3c.Document != null && !string.IsNullOrEmpty(_0x3c.Document.Title))
                 {
-                    this.Text = webBrowser.Document.Title + " - Internet Explorer 6.1";
+                    this.Text = _0x3c.Document.Title + "\x20\x2d\x20\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72\x20\x36\x2e\x31";
                 }
                 else
                 {
-                    this.Text = "Internet Explorer 6.1";
+                    this.Text = "\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72\x20\x36\x2e\x31";
                 }
             };
 
-            this.Controls.Add(webBrowser);
-            this.Controls.Add(statusStrip);
-            this.Controls.Add(topPanel);
-            this.Controls.Add(menuStrip);
+            this.Controls.Add(_0x3c);
+            this.Controls.Add(_0x6f7);
+            this.Controls.Add(_0x3c4c);
+            this.Controls.Add(_0xb4);
 
-            if (!string.IsNullOrEmpty(startupUrl))
+            if (!string.IsNullOrEmpty(_0x09a))
             {
-                NavigateToUrlString(startupUrl);
+                NavigateToUrlString(_0x09a);
             }
             else
             {
-                NavigateToUrlString(currentHomepage);
+                NavigateToUrlString(_0xf80);
             }
         }
 
@@ -356,143 +326,121 @@ namespace SingleFileTridentBrowser
         {
             try
             {
-                if (File.Exists(versionFilePath))
+                if (File.Exists(_0xd6e))
                 {
-                    string savedVersion = File.ReadAllText(versionFilePath).Trim();
-                    if (!string.IsNullOrEmpty(savedVersion))
-                    {
-                        return savedVersion;
-                    }
+                    string _0x8181 = File.ReadAllText(_0xd6e).Trim();
+                    if (!string.IsNullOrEmpty(_0x8181)) return _0x8181;
                 }
                 else
                 {
-                    // Automatically create version.txt on first launch with initial v1.0
-                    File.WriteAllText(versionFilePath, "v1.0");
+                    File.WriteAllText(_0xd6e, "\x76\x31\x2e\x30");
                 }
             }
-            catch
-            {
-                // Fallback
-            }
-            return "v1.0"; // Default initial version
+            catch { }
+            return "\x76\x31\x2e\x30";
         }
 
-        private async void CheckForUpdates(bool manualCheck)
+        private async void CheckForUpdates(bool _0x9292)
         {
             try
             {
-                if (manualCheck)
+                if (_0x9292)
                 {
-                    lblStatus.Text = "Checking for updates...";
-                    progressBar.Visible = true;
+                    _0x708.Text = "\x43\x68\x65\x63\x6b\x69\x6e\x67\x20\x66\x6f\x72\x20\x75\x70\x64\x61\x74\x65\x73\x2e\x2e\x2e";
+                    _0x819.Visible = true;
                 }
 
-                string repoOwner = "KrystianS8";
-                string repoName = "Internet-Explorer-6.1";
-                string apiUrl = "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/releases/latest";
+                string _0xa3a3 = "\x4b\x72\x79\x73\x74\x69\x61\x6e\x53\x38";
+                string _0xb4b4 = "\x49\x6e\x74\x65\x72\x6e\x65\x74\x2d\x45\x78\x70\x6c\x6f\x72\x65\x72\x2d\x36\x2e\x31";
+                string _0xc5c5 = string.Format("\x68\x74\x74\x70\x73\x3a\x2f\x2f\x61\x70\x69\x2e\x67\x69\x74\x68\x75\x62\x2e\x63\x6f\x6d\x2f\x72\x65\x70\x6f\x73\x2f\x7b\x30\x7d\x2f\x7b\x31\x7d\x2f\x72\x65\x6c\x65\x61\x73\x65\x73\x2f\x6c\x61\x74\x65\x73\x74", _0xa3a3, _0xb4b4);
 
-                using (HttpClient client = new HttpClient())
+                using (HttpClient _0xd6d6 = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Internet-Explorer-6.1");
-                    
-                    string json = await client.GetStringAsync(apiUrl);
+                    _0xd6d6.DefaultRequestHeaders.Add("\x55\x73\x65\x72\x2d\x41\x67\x65\x6e\x74", "\x49\x6e\x74\x65\x72\x6e\x65\x74\x2d\x45\x78\x70\x6c\x6f\x72\x65\x72\x2d\x36\x2e\x31");
+                    string _0xe7e7 = await _0xd6d6.GetStringAsync(_0xc5c5);
 
-                    // 1. Extract the tag name (version)
-                    int tagIndex = json.IndexOf("\"tag_name\":\"");
-                    if (tagIndex != -1)
+                    Match _0xf8f8 = Regex.Match(_0xe7e7, "\x22\x74\x61\x67\x5f\x6e\x61\x6d\x65\x22\x5c\x73\x2a\x3a\x5c\x73\x2a\x22\x28\x5b\x5e\x22\x5d\x2b\x29\x22");
+                    Match _0x0909 = Regex.Match(_0xe7e7, "\x22\x7a\x69\x70\x62\x61\x6c\x6c\x5f\x75\x72\x6c\x22\x5c\x73\x2a\x3a\x5c\x73\x2a\x22\x28\x5b\x5e\x22\x5d\x2b\x29\x22");
+
+                    if (_0xf8f8.Success)
                     {
-                        int startIndex = tagIndex + 12;
-                        int endIndex = json.IndexOf("\"", startIndex);
-                        string latestVersion = json.Substring(startIndex, endIndex - startIndex);
+                        string _0x1a1a = _0xf8f8.Groups[1].Value.Trim();
+                        string _0x2b2b = GetCurrentVersion().Trim();
 
-                        string currentVersion = GetCurrentVersion();
+                        string _0x3c3c = _0x1a1a.TrimStart('\x76', '\x56');
+                        string _0x4d4d = _0x2b2b.TrimStart('\x76', '\x56');
 
-                        if (latestVersion != currentVersion)
+                        if (!string.Equals(_0x3c3c, _0x4d4d, StringComparison.OrdinalIgnoreCase))
                         {
-                            DialogResult result = MessageBox.Show(
-                                "A new source update (" + latestVersion + ") is available! Would you like to download and update the source files now?\n\n- Click Yes to update, replace files, and restart.\n- Click No to skip.",
-                                "Update Available",
+                            DialogResult _0x5e5e = MessageBox.Show(
+                                string.Format("\x41\x20\x6e\x65\x77\x20\x73\x6f\x75\x72\x63\x65\x20\x75\x70\x64\x61\x74\x65\x20\x28\x7b\x30\x7d\x29\x20\x69\x73\x20\x61\x76\x61\x69\x6c\x61\x62\x6c\x65\x21\x20\x57\x6f\x75\x6c\x64\x20\x79\x6f\x75\x20\x6c\x69\x6b\x65\x20\x74\x6f\x20\x64\x6f\x77\x6e\x6c\x6f\x61\x64\x20\x61\x6e\x64\x20\x75\x70\x64\x61\x74\x65\x20\x74\x68\x65\x20\x73\x6f\x75\x72\x63\x65\x20\x66\x69\x6c\x65\x73\x20\x6e\x6f\x77\x3f\n\n\x2d\x20\x43\x6c\x69\x63\x6b\x20\x59\x65\x73\x20\x74\x6f\x20\x64\x6f\x77\x6e\x6c\x6f\x61\x64\x20\x61\x6e\x64\x20\x61\x70\x70\x6c\x79\x20\x74\x68\x65\x20\x75\x70\x64\x61\x74\x65\x20\x61\x75\x74\x6f\x6d\x61\x74\x69\x63\x61\x6c\x6c\x79\x2e\n\n\x2d\x20\x43\x6c\x69\x63\x6b\x20\x4e\x6f\x20\x74\x6f\x20\x73\x6b\x69\x70\x2e", _0x1a1a),
+                                "\x55\x70\x64\x61\x74\x65\x20\x41\x76\x61\x69\x6c\x61\x62\x6c\x65",
                                 MessageBoxButtons.YesNo,
                                 MessageBoxIcon.Information);
 
-                            if (result == DialogResult.Yes)
+                            if (_0x5e5e == DialogResult.Yes && _0x0909.Success)
                             {
-                                // 2. Extract the zipball_url for the repository source code at this release tag
-                                int zipIndex = json.IndexOf("\"zipball_url\":\"");
-                                if (zipIndex != -1)
+                                string _0x6f6f = _0x0909.Groups[1].Value;
+
+                                _0x708.Text = "\x44\x6f\x77\x6e\x6c\x6f\x61\x64\x69\x6e\x67\x20\x72\x65\x70\x6f\x73\x69\x74\x6f\x72\x79\x20\x73\x6f\x75\x72\x63\x65\x2e\x2e\x2e";
+                                _0x819.Visible = true;
+
+                                byte[] _0x7070 = await _0xd6d6.GetByteArrayAsync(_0x6f6f);
+                                string _0x8181 = Path.Combine(Path.GetTempPath(), "\x69\x65\x5f\x75\x70\x64\x61\x74\x65\x2e\x7a\x69\x70");
+                                File.WriteAllBytes(_0x8181, _0x7070);
+
+                                try { File.WriteAllText(_0xd6e, _0x1a1a); } catch { }
+
+                                string _0x9292a = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+                                string _0xa3a3a = Path.Combine(Path.GetTempPath(), "\x69\x65\x5f\x75\x70\x64\x61\x74\x65\x2e\x70\x73\x31");
+
+                                string _0xb4b4b = string.Format(
+                                    "\x53\x74\x61\x72\x74\x2d\x53\x6c\x65\x65\x70\x20\x2d\x53\x65\x63\x6f\x6e\x64\x73\x20\x32\n" +
+                                    "\x45\x78\x70\x61\x6e\x64\x2d\x41\x72\x63\x68\x69\x76\x65\x20\x2d\x50\x61\x74\x68\x20\x27\x7b\x30\x7d\x27\x20\x2d\x44\x65\x73\x74\x69\x6e\x61\x74\x69\x6f\x6e\x50\x61\x74\x68\x20\x27\x7b\x31\x7d\x69\x65\x5f\x65\x78\x74\x72\x61\x63\x74\x27\x20\x2d\x46\x6f\x72\x63\x65\n" +
+                                    "\x24\x69\x6e\x6e\x65\x72\x46\x6f\x6c\x64\x65\x72\x20\x3d\x20\x47\x65\x74\x2d\x43\x68\x69\x6c\x64\x49\x74\x65\x6d\x20\x27\x7b\x31\x7d\x69\x65\x5f\x65\x78\x74\x72\x61\x63\x74\x27\x20\x7c\x20\x53\x65\x6c\x65\x63\x74\x2d\x4f\x62\x6a\x65\x63\x74\x20\x2d\x46\x69\x72\x73\x74\x20\x31\n" +
+                                    "\x43\x6f\x70\x79\x2d\x49\x74\x65\x6d\x20\x2d\x50\x61\x74\x68\x20\x22\x24\x28\x24\x69\x6e\x6e\x65\x72\x46\x6f\x6c\x64\x65\x72\x2e\x46\x75\x6c\x6c\x4e\x61\x6d\x65\x29\x5c\x2a\x22\x20\x2d\x44\x65\x73\x74\x69\x6e\x61\x74\x69\x6f\x6e\x20\x27\x7b\x32\x7d\x27\x20\x2d\x52\x65\x63\x75\x72\x73\x65\x20\x2d\x46\x6f\x72\x63\x65\n" +
+                                    "\x52\x65\x6d\x6f\x76\x65\x2d\x49\x74\x65\x6d\x20\x27\x7b\x30\x7d\x27\x20\x2d\x46\x6f\x72\x63\x65\n" +
+                                    "\x52\x65\x6d\x6f\x76\x65\x2d\x49\x74\x65\x6d\x20\x27\x7b\x31\x7d\x69\x65\x5f\x65\x78\x74\x72\x61\x63\x74\x27\x20\x2d\x52\x65\x63\x75\x72\x73\x65\x20\x2d\x46\x6f\x72\x63\x65\n" +
+                                    "\x53\x74\x61\x72\x74\x2d\x50\x72\x6f\x63\x65\x73\x73\x20\x27\x7b\x33\x7d\x27\n" +
+                                    "\x52\x65\x6d\x6f\x76\x65\x2d\x49\x74\x65\x6d\x20\x24\x4d\x79\x49\x76\x6f\x63\x61\x74\x69\x6f\x6e\x2e\x4d\x79\x43\x6f\x6d\x6d\x61\x6e\x64\x2e\x50\x61\x74\x68\x20\x2d\x46\x6f\x72\x63\x65",
+                                    _0x8181,
+                                    Path.GetTempPath(),
+                                    _0x9292a,
+                                    Path.Combine(_0x9292a, "\x69\x65\x78\x70\x6c\x6f\x72\x65\x36\x31\x2e\x65\x78\x65"));
+
+                                File.WriteAllText(_0xa3a3a, _0xb4b4b);
+
+                                MessageBox.Show("\x53\x6f\x75\x72\x63\x65\x20\x64\x6f\x77\x6e\x6c\x6f\x61\x64\x65\x64\x20\x73\x75\x63\x63\x65\x73\x73\x66\x75\x6c\x6c\x79\x21\x20\x54\x68\x65\x20\x62\x72\x6f\x77\x73\x65\x72\x20\x77\x69\x6c\x6c\x20\x6e\x6f\x77\x20\x63\x6c\x6f\x73\x65\x2c\x20\x75\x70\x64\x61\x74\x65\x20\x69\x74\x73\x20\x66\x69\x6c\x65\x73\x2c\x20\x61\x6e\x64\x20\x72\x65\x73\x74\x61\x72\x74\x2e", "\x55\x70\x64\x61\x74\x69\x6e\x67", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                Process.Start(new ProcessStartInfo
                                 {
-                                    int zipStart = zipIndex + 15;
-                                    int zipEnd = json.IndexOf("\"", zipStart);
-                                    string zipUrl = json.Substring(zipStart, zipEnd - zipStart);
+                                    FileName = "\x70\x6f\x77\x65\x72\x73\x68\x65\x6c\x6c\x2e\x65\x78\x65",
+                                    Arguments = string.Format("\x2d\x45\x78\x65\x63\x75\x74\x69\x6f\x6e\x50\x6f\x6c\x69\x63\x79\x20\x42\x79\x70\x61\x73\x73\x20\x2d\x46\x69\x6c\x65\x20\x22\x7b\x30\x7d\x22", _0xa3a3a),
+                                    CreateNoWindow = true,
+                                    UseShellExecute = false
+                                });
 
-                                    lblStatus.Text = "Downloading repository source...";
-                                    progressBar.Visible = true;
-
-                                    // 3. Download zip bytes to Temp folder
-                                    byte[] zipBytes = await client.GetByteArrayAsync(zipUrl);
-                                    string tempZipPath = Path.Combine(Path.GetTempPath(), "ie_update.zip");
-                                    File.WriteAllBytes(tempZipPath, zipBytes);
-
-                                    // 4. Save the new version locally
-                                    try
-                                    {
-                                        File.WriteAllText(versionFilePath, latestVersion);
-                                    }
-                                    catch { }
-
-                                    // 5. Create a temporary PowerShell update script
-                                    string targetDirectory = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-                                    string tempScriptPath = Path.Combine(Path.GetTempPath(), "ie_update.ps1");
-
-                                    string psScriptContent = 
-                                        "Start-Sleep -Seconds 2\n" +
-                                        "Expand-Archive -Path '" + tempZipPath + "' -DestinationPath '" + Path.GetTempPath() + "ie_extract' -Force\n" +
-                                        "$innerFolder = Get-ChildItem '" + Path.GetTempPath() + "ie_extract' | Select-Object -First 1\n" +
-                                        "Copy-Item -Path \"$($innerFolder.FullName)\\*\" -Destination '" + targetDirectory + "' -Recurse -Force\n" +
-                                        "Remove-Item '" + tempZipPath + "' -Force\n" +
-                                        "Remove-Item '" + Path.GetTempPath() + "ie_extract' -Recurse -Force\n" +
-                                        "Start-Process '" + Path.Combine(targetDirectory, "iexplore61.exe") + "'\n" +
-                                        "Remove-Item $MyInvocation.MyCommand.Path -Force";
-
-                                    File.WriteAllText(tempScriptPath, psScriptContent);
-
-                                    MessageBox.Show("Source downloaded successfully! The browser will now close, update its files, and restart.", "Updating", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                                    // 6. Launch PowerShell script in the background and exit application
-                                    Process.Start(new ProcessStartInfo
-                                    {
-                                        FileName = "powershell.exe",
-                                        Arguments = "-ExecutionPolicy Bypass -File \"" + tempScriptPath + "\"",
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false
-                                    });
-
-                                    Application.Exit();
-                                }
-                                else
-                                {
-                                    MessageBox.Show("Could not locate the zipball source URL in the release JSON.", "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                }
+                                Application.Exit();
                             }
                         }
-                        else if (manualCheck)
+                        else if (_0x9292)
                         {
-                            MessageBox.Show("You are currently running the latest version (" + currentVersion + ").", "No Updates Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show(string.Format("\x59\x6f\x75\x20\x61\x72\x65\x20\x63\x75\x72\x72\x65\x6e\x74\x6c\x79\x20\x72\x75\x6e\x6e\x69\x6e\x67\x20\x74\x68\x65\x20\x6c\x61\x74\x65\x73\x74\x20\x76\x65\x72\x73\x69\x6f\x6e\x20\x28\x7b\x30\x7d\x29\x2e", _0x2b2b), "\x4e\x6f\x20\x55\x70\x64\x61\x74\x65\x73\x20\x46\x6f\x75\x6e\x64", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
                 }
             }
             catch
             {
-                if (manualCheck)
+                if (_0x9292)
                 {
-                    MessageBox.Show("Unable to check for updates. Please check your internet connection.", "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("\x55\x6e\x61\x62\x6c\x65\x20\x74\x6f\x20\x63\x68\x65\x63\x6b\x20\x66\x6f\x72\x20\x75\x70\x64\x61\x74\x65\x73\x2e\x20\x50\x6c\x65\x61\x73\x65\x20\x63\x68\x65\x63\x6b\x20\x79\x6f\x75\x72\x20\x69\x6e\x74\x65\x72\x6e\x65\x74\x20\x63\x6f\x6e\x6e\x65\x63\x74\x69\x6f\x6e\x2e", "\x55\x70\x64\x61\x74\x65\x20\x45\x72\x72\x6f\x72", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             finally
             {
-                lblStatus.Text = "Ready";
-                progressBar.Visible = false;
+                _0x708.Text = "\x52\x65\x61\x64\x79";
+                _0x819.Visible = false;
             }
         }
 
@@ -500,86 +448,68 @@ namespace SingleFileTridentBrowser
         {
             try
             {
-                if (File.Exists(defaultCheckFilePath))
+                if (File.Exists(_0xc5d))
                 {
-                    string setting = File.ReadAllText(defaultCheckFilePath).Trim();
-                    if (setting.Equals("skip", StringComparison.OrdinalIgnoreCase)) return;
+                    string _0xc5c = File.ReadAllText(_0xc5d).Trim();
+                    if (_0xc5c.Equals("\x73\x6b\x69\x70", StringComparison.OrdinalIgnoreCase)) return;
                 }
 
-                bool isDefault = true;
-                string exeName = Path.GetFileName(Application.ExecutablePath);
+                bool _0xd6d = true;
+                string _0xe7e = Path.GetFileName(Application.ExecutablePath);
 
-                using (var keyHttp = Registry.CurrentUser.OpenSubKey(@"Software\Classes\http\shell\open\command", false))
+                using (var _0xf8f = Registry.CurrentUser.OpenSubKey(@"Software\Classes\http\shell\open\command", false))
                 {
-                    string cmd = (keyHttp != null) ? keyHttp.GetValue(null) as string : null;
-                    if (string.IsNullOrEmpty(cmd) || cmd.IndexOf(exeName, StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        isDefault = false;
-                    }
+                    string _0x090 = (_0xf8f != null) ? _0xf8f.GetValue(null) as string : null;
+                    if (string.IsNullOrEmpty(_0x090) || _0x090.IndexOf(_0xe7e, StringComparison.OrdinalIgnoreCase) < 0) _0xd6d = false;
                 }
 
-                using (var keyHtml = Registry.CurrentUser.OpenSubKey(@"Software\Classes\.html\shell\open\command", false))
+                using (var _0x1a1 = Registry.CurrentUser.OpenSubKey(@"Software\Classes\.html\shell\open\command", false))
                 {
-                    string cmd = (keyHtml != null) ? keyHtml.GetValue(null) as string : null;
-                    if (string.IsNullOrEmpty(cmd) || cmd.IndexOf(exeName, StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        isDefault = false;
-                    }
+                    string _0x2b2 = (_0x1a1 != null) ? _0x1a1.GetValue(null) as string : null;
+                    if (string.IsNullOrEmpty(_0x2b2) || _0x2b2.IndexOf(_0xe7e, StringComparison.OrdinalIgnoreCase) < 0) _0xd6d = false;
                 }
 
-                if (!isDefault)
+                if (!_0xd6d)
                 {
-                    DialogResult res = MessageBox.Show(
-                        "Internet Explorer is not currently your default browser.\n\nWould you like to make it your default browser for all HTML, XML, and web protocols?",
-                        "Internet Explorer",
+                    DialogResult _0x3c3 = MessageBox.Show(
+                        "\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72\x20\x69\x73\x20\x6e\x6f\x74\x20\x63\x75\x72\x72\x65\x6e\x74\x6c\x79\x20\x79\x6f\x75\x72\x20\x64\x65\x66\x61\x75\x6c\x74\x20\x62\x72\x6f\x77\x73\x65\x72\x2e\n\n\x57\x6f\x75\x6c\x64\x20\x79\x6f\x75\x20\x6c\x69\x6b\x65\x20\x74\x6f\x20\x6d\x61\x6b\x65\x20\x69\x74\x20\x79\x6f\x75\x72\x20\x64\x65\x66\x61\x75\x6c\x74\x20\x62\x72\x6f\x77\x73\x65\x72\x20\x66\x6f\x72\x20\x61\x6c\x6c\x20\x48\x54\x4d\x4c\x2c\x20\x58\x4d\x4c\x2c\x20\x61\x6e\x64\x20\x77\x65\x62\x20\x70\x72\x6f\x74\x6f\x63\x6f\x6c\x73\x3f",
+                        "\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72",
                         MessageBoxButtons.YesNoCancel,
                         MessageBoxIcon.Question);
 
-                    if (res == DialogResult.Yes)
+                    if (_0x3c3 == DialogResult.Yes)
                     {
                         SetAsDefaultBrowser();
-                        MessageBox.Show("Internet Explorer has been set as your default browser for all supported web extensions.", "Internet Explorer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72\x20\x68\x61\x73\x20\x62\x65\x65\x6e\x20\x73\x65\x74\x20\x61\x73\x20\x79\x6f\x75\x72\x20\x64\x65\x66\x61\x75\x6c\x74\x20\x62\x72\x6f\x77\x73\x65\x72\x20\x66\x6f\x72\x20\x61\x6c\x6c\x20\x73\x75\x70\x70\x6f\x72\x74\x65\x64\x20\x77\x65\x62\x20\x65\x78\x74\x65\x6e\x73\x69\x6f\x6e\x73\x2e", "\x49\x6e\x74\x65\x72\x6e\x65\x74\x20\x45\x78\x70\x6c\x6f\x72\x65\x72", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
-                    else if (res == DialogResult.Cancel)
+                    else if (_0x3c3 == DialogResult.Cancel)
                     {
-                        File.WriteAllText(defaultCheckFilePath, "skip");
+                        File.WriteAllText(_0xc5d, "\x73\x6b\x69\x70");
                     }
                 }
             }
-            catch
-            {
-                // Silently handle exceptions
-            }
+            catch { }
         }
 
         private void SetAsDefaultBrowser()
         {
             try
             {
-                string exePath = Application.ExecutablePath;
-                string command = "\"" + exePath + "\" \"%1\"";
+                string _0x4d4 = Application.ExecutablePath;
+                string _0x5e5 = "\x22" + _0x4d4 + "\x22\x20\x22\x25\x31\x22";
 
-                using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Classes\http\shell\open\command"))
-                {
-                    key.SetValue("", command);
-                }
-                using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Classes\https\shell\open\command"))
-                {
-                    key.SetValue("", command);
-                }
+                using (var _0x6f6 = Registry.CurrentUser.CreateSubKey(@"Software\Classes\http\shell\open\command")) _0x6f6.SetValue("", _0x5e5);
+                using (var _0x7f7 = Registry.CurrentUser.CreateSubKey(@"Software\Classes\https\shell\open\command")) _0x7f7.SetValue("", _0x5e5);
 
-                string[] extensions = { ".html", ".htm", ".shtml", ".xhtml", ".xml" };
-                foreach (string ext in extensions)
+                string[] _0x8f8 = { "\x2e\x68\x74\x6d\x6c", "\x2e\x68\x74\x6d", "\x2e\x73\x68\x74\x6d\x6c", "\x2e\x78\x68\x74\x6d\x6c", "\x2e\x78\x6d\x6c" };
+                foreach (string _0x9f9 in _0x8f8)
                 {
-                    using (var key = Registry.CurrentUser.CreateSubKey("Software\\Classes\\" + ext + "\\shell\\open\\command"))
-                    {
-                        key.SetValue("", command);
-                    }
+                    using (var _0x0a0 = Registry.CurrentUser.CreateSubKey("Software\\Classes\\" + _0x9f9 + "\\shell\\open\\command")) _0x0a0.SetValue("", _0x5e5);
                 }
             }
-            catch (Exception ex)
+            catch (Exception _0x1b1)
             {
-                MessageBox.Show("Could not automatically set default browser extensions:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("\x43\x6f\x75\x6c\x64\x20\x6e\x6f\x74\x20\x61\x75\x74\x6f\x6d\x61\x74\x69\x63\x61\x6c\x6c\x79\x20\x73\x65\x74\x20\x64\x65\x66\x61\x75\x6c\x74\x20\x62\x72\x6f\x77\x73\x65\x72\x20\x65\x78\x74\x65\x6e\x73\x69\x6f\x6e\x73\x3a\n" + _0x1b1.Message, "\x45\x72\x72\x6f\x72", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -587,81 +517,64 @@ namespace SingleFileTridentBrowser
         {
             try
             {
-                if (File.Exists(homepageFilePath))
+                if (File.Exists(_0xb4c))
                 {
-                    string saved = File.ReadAllText(homepageFilePath).Trim();
-                    if (!string.IsNullOrEmpty(saved))
-                    {
-                        currentHomepage = saved;
-                    }
+                    string _0x2c2 = File.ReadAllText(_0xb4c).Trim();
+                    if (!string.IsNullOrEmpty(_0x2c2)) _0xf80 = _0x2c2;
                 }
             }
-            catch
-            {
-                // Fallback
-            }
+            catch { }
         }
 
         private void SaveSettings()
         {
-            try
-            {
-                File.WriteAllText(homepageFilePath, currentHomepage);
-            }
-            catch
-            {
-                // Ignore
-            }
+            try { File.WriteAllText(_0xb4c, _0xf80); } catch { }
         }
 
-        private void NavigateToWebApp(string customUrl, string fileName)
+        private void NavigateToWebApp(string _0x3d3, string _0x4e4)
         {
-            string fullPath = Path.Combine(sourceDir, fileName);
-            if (!File.Exists(fullPath)) fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+            string _0x5f5 = Path.Combine(_0xe7f, _0x4e4);
+            if (!File.Exists(_0x5f5)) _0x5f5 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _0x4e4);
 
-            if (File.Exists(fullPath))
+            if (File.Exists(_0x5f5))
             {
-                webBrowser.Navigate(new Uri(fullPath).AbsoluteUri);
-                txtUrl.Text = customUrl;
-                AddUrlToHistory(customUrl);
+                _0x3c.Navigate(new Uri(_0x5f5).AbsoluteUri);
+                _0x4d.Text = _0x3d3;
+                AddUrlToHistory(_0x3d3);
             }
             else
             {
-                MessageBox.Show("Could not find offline file: " + fileName, "File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("\x43\x6f\x75\x6c\x64\x20\x6e\x6f\x74\x20\x66\x69\x6e\x64\x20\x6f\x66\x66\x6c\x69\x6e\x65\x20\x66\x69\x6c\x65\x3a\x20" + _0x4e4, "\x46\x69\x6c\x65\x20\x4e\x6f\x74\x20\x46\x6f\x75\x6e\x64", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
-        private void NavigateToUrlString(string targetUrl)
+        private void NavigateToUrlString(string _0x6a6)
         {
-            if (targetUrl.Equals("http://welcome.com", StringComparison.OrdinalIgnoreCase))
+            if (_0x6a6.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d", StringComparison.OrdinalIgnoreCase))
             {
-                NavigateToWebApp("http://welcome.com", "welcome.html");
+                NavigateToWebApp("\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d", "\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x68\x74\x6d\x6c");
             }
-            else if (targetUrl.Equals("http://turtle.chatbot/", StringComparison.OrdinalIgnoreCase))
+            else if (_0x6a6.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f", StringComparison.OrdinalIgnoreCase))
             {
-                NavigateToWebApp("http://turtle.chatbot/", "turtle.html");
+                NavigateToWebApp("\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f", "\x74\x75\x72\x74\x6c\x65\x2e\x68\x74\x6d\x6c");
             }
-            else if (targetUrl.Equals("http://htmlgamemaker.org/", StringComparison.OrdinalIgnoreCase))
+            else if (_0x6a6.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f", StringComparison.OrdinalIgnoreCase))
             {
-                NavigateToWebApp("http://htmlgamemaker.org/", "maker.html");
+                NavigateToWebApp("\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f", "\x6d\x61\x6b\x65\x72\x2e\x68\x74\x6d\x6c");
             }
             else
             {
-                if (File.Exists(targetUrl) || Path.IsPathRooted(targetUrl))
+                if (File.Exists(_0x6a6) || Path.IsPathRooted(_0x6a6))
                 {
                     try
                     {
-                        string fullPath = Path.GetFullPath(targetUrl);
-                        webBrowser.Navigate(new Uri(fullPath).AbsoluteUri);
+                        string _0x7b7 = Path.GetFullPath(_0x6a6);
+                        _0x3c.Navigate(new Uri(_0x7b7).AbsoluteUri);
                         return;
                     }
-                    catch
-                    {
-                        // Fall back
-                    }
+                    catch { }
                 }
-
-                webBrowser.Navigate(targetUrl);
+                _0x3c.Navigate(_0x6a6);
             }
         }
 
@@ -669,114 +582,91 @@ namespace SingleFileTridentBrowser
         {
             try
             {
-                if (File.Exists(historyFilePath))
+                if (File.Exists(_0xa3b))
                 {
-                    var lines = File.ReadAllLines(historyFilePath);
-                    historyList = new List<string>(lines);
+                    var _0x8c8 = File.ReadAllLines(_0xa3b);
+                    _0x92a = new List<string>(_0x8c8);
                 }
             }
-            catch
-            {
-                historyList = new List<string>();
-            }
+            catch { _0x92a = new List<string>(); }
         }
 
         private void SaveHistoryToFile()
         {
-            try
-            {
-                File.WriteAllLines(historyFilePath, historyList);
-            }
-            catch
-            {
-                // Ignore
-            }
+            try { File.WriteAllLines(_0xa3b, _0x92a); } catch { }
         }
 
-        private void AddUrlToHistory(string url)
+        private void AddUrlToHistory(string _0x9d9)
         {
-            if (string.IsNullOrWhiteSpace(url) || url == "about:blank") return;
+            if (string.IsNullOrWhiteSpace(_0x9d9) || _0x9d9 == "\x61\x62\x6f\x75\x74\x3a\x62\x6c\x61\x6e\x6b") return;
 
-            historyList.RemoveAll(u => u.Equals(url, StringComparison.OrdinalIgnoreCase));
-            historyList.Add(url);
+            _0x92a.RemoveAll(_0x0e0 => _0x0e0.Equals(_0x9d9, StringComparison.OrdinalIgnoreCase));
+            _0x92a.Add(_0x9d9);
 
-            if (historyList.Count > 10)
-            {
-                historyList.RemoveAt(0);
-            }
-
+            if (_0x92a.Count > 10) _0x92a.RemoveAt(0);
             SaveHistoryToFile();
         }
 
         private void UpdateHistoryMenu()
         {
-            menuHistory.DropDownItems.Clear();
+            _0xd6.DropDownItems.Clear();
 
-            if (historyList.Count == 0)
+            if (_0x92a.Count == 0)
             {
-                ToolStripMenuItem emptyItem = new ToolStripMenuItem("(No history yet)");
-                emptyItem.Enabled = false;
-                menuHistory.DropDownItems.Add(emptyItem);
+                ToolStripMenuItem _0x1f1 = new ToolStripMenuItem("\x28\x4e\x6f\x20\x68\x69\x73\x74\x6f\x72\x79\x20\x79\x65\x74\x29");
+                _0x1f1.Enabled = false;
+                _0xd6.DropDownItems.Add(_0x1f1);
                 return;
             }
 
-            var recentUrls = historyList.AsEnumerable().Reverse().ToList();
-
-            foreach (string url in recentUrls)
+            var _0x2f2 = _0x92a.AsEnumerable().Reverse().ToList();
+            foreach (string _0x3f3 in _0x2f2)
             {
-                string displayLabel = url;
-                if (displayLabel.Length > 60)
-                {
-                    displayLabel = displayLabel.Substring(0, 57) + "...";
-                }
+                string _0x4g4 = _0x3f3;
+                if (_0x4g4.Length > 60) _0x4g4 = _0x4g4.Substring(0, 57) + "\x2e\x2e\x2e";
 
-                ToolStripMenuItem item = new ToolStripMenuItem(displayLabel);
-                string targetUrl = url; 
-                item.Click += (s, e) => {
-                    NavigateToUrlString(targetUrl);
-                };
-                menuHistory.DropDownItems.Add(item);
+                ToolStripMenuItem _0x5h5 = new ToolStripMenuItem(_0x4g4);
+                string _0x6i6 = _0x3f3;
+                _0x5h5.Click += (_0x7j7, _0x8k8) => { NavigateToUrlString(_0x6i6); };
+                _0xd6.DropDownItems.Add(_0x5h5);
             }
         }
 
         private void NavigateToUrl()
         {
-            string input = txtUrl.Text.Trim();
+            string _0x9l9 = _0x4d.Text.Trim();
 
-            if (input.Equals("http://welcome.com", StringComparison.OrdinalIgnoreCase) ||
-                input.Equals("http://turtle.chatbot/", StringComparison.OrdinalIgnoreCase) ||
-                input.Equals("http://htmlgamemaker.org/", StringComparison.OrdinalIgnoreCase))
+            if (_0x9l9.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x77\x65\x6c\x63\x6f\x6d\x65\x2e\x63\x6f\x6d", StringComparison.OrdinalIgnoreCase) ||
+                _0x9l9.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x74\x75\x72\x74\x6c\x65\x2e\x63\x68\x61\x74\x62\x6f\x74\x2f", StringComparison.OrdinalIgnoreCase) ||
+                _0x9l9.Equals("\x68\x74\x74\x70\x3a\x2f\x2f\x68\x74\x6d\x6c\x67\x61\x6d\x65\x6d\x61\x6b\x65\x72\x2e\x6f\x72\x67\x2f", StringComparison.OrdinalIgnoreCase))
             {
-                NavigateToUrlString(input);
+                NavigateToUrlString(_0x9l9);
                 return;
             }
 
-            if (Uri.IsWellFormedUriString(input, UriKind.Absolute))
+            if (Uri.IsWellFormedUriString(_0x9l9, UriKind.Absolute))
             {
-                webBrowser.Navigate(input);
+                _0x3c.Navigate(_0x9l9);
                 return;
             }
 
-            if (File.Exists(input) || Directory.Exists(input) || Path.IsPathRooted(input))
+            if (File.Exists(_0x9l9) || Directory.Exists(_0x9l9) || Path.IsPathRooted(_0x9l9))
             {
                 try
                 {
-                    string fullPath = Path.GetFullPath(input);
-                    webBrowser.Navigate(new Uri(fullPath).AbsoluteUri);
+                    string _0x0m0 = Path.GetFullPath(_0x9l9);
+                    _0x3c.Navigate(new Uri(_0x0m0).AbsoluteUri);
                     return;
                 }
-                catch
-                {
-                    // Fall back
-                }
+                catch { }
             }
 
-            if (!input.StartsWith("http://") && !input.StartsWith("https://") && !input.StartsWith("file://"))
+            if (!_0x9l9.StartsWith("\x68\x74\x74\x70\x3a\x2f\x2f") && !_0x9l9.StartsWith("\x68\x74\x74\x70\x73\x3a\x2f\x2f") && !_0x9l9.StartsWith("\x66\x69\x6c\x65\x3a\x2f\x2f"))
             {
-                input = "http://" + input;
+                _0x9l9 = "\x68\x74\x74\x70\x3a\x2f\x2f" + _0x9l9;
             }
 
-            webBrowser.Navigate(input);
+            _0x3c.Navigate(_0x9l9);
         }
     }
 }
