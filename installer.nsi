@@ -15,6 +15,7 @@ SetCompressor lzma
 ; --- Modern UI Definitions ---
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
+!include "nsDialogs.nsh"
 
 !define MUI_ABORTWARNING
 !define MUI_ICON "source\ieicon.ico"
@@ -35,8 +36,48 @@ Page custom ExtraShortcutOptionsPage ExtraShortcutOptionsPageLeave
 ; Uninstaller pages
 !insertmacro MUI_UNPAGE_INSTFILES
 
-; --- Languages ---
+; --- Languages (Inserted AFTER pages as required by MUI2) ---
 !insertmacro MUI_LANGUAGE "English"
+!insertmacro MUI_LANGUAGE "Albanian"
+!insertmacro MUI_LANGUAGE "Arabic"
+!insertmacro MUI_LANGUAGE "Belarusian"
+!insertmacro MUI_LANGUAGE "Bulgarian"
+!insertmacro MUI_LANGUAGE "Catalan"
+!insertmacro MUI_LANGUAGE "Croatian"
+!insertmacro MUI_LANGUAGE "Czech"
+!insertmacro MUI_LANGUAGE "Danish"
+!insertmacro MUI_LANGUAGE "Dutch"
+!insertmacro MUI_LANGUAGE "Estonian"
+!insertmacro MUI_LANGUAGE "Farsi"
+!insertmacro MUI_LANGUAGE "Finnish"
+!insertmacro MUI_LANGUAGE "French"
+!insertmacro MUI_LANGUAGE "German"
+!insertmacro MUI_LANGUAGE "Greek"
+!insertmacro MUI_LANGUAGE "Hebrew"
+!insertmacro MUI_LANGUAGE "Hungarian"
+!insertmacro MUI_LANGUAGE "Indonesian"
+!insertmacro MUI_LANGUAGE "Irish"
+!insertmacro MUI_LANGUAGE "Italian"
+!insertmacro MUI_LANGUAGE "Japanese"
+!insertmacro MUI_LANGUAGE "Korean"
+!insertmacro MUI_LANGUAGE "Kurdish"
+!insertmacro MUI_LANGUAGE "Latvian"
+!insertmacro MUI_LANGUAGE "Lithuanian"
+!insertmacro MUI_LANGUAGE "Luxembourgish"
+!insertmacro MUI_LANGUAGE "Norwegian"
+!insertmacro MUI_LANGUAGE "Polish"
+!insertmacro MUI_LANGUAGE "Portuguese"
+!insertmacro MUI_LANGUAGE "Romanian"
+!insertmacro MUI_LANGUAGE "Russian"
+!insertmacro MUI_LANGUAGE "Serbian"
+!insertmacro MUI_LANGUAGE "Slovak"
+!insertmacro MUI_LANGUAGE "Slovenian"
+!insertmacro MUI_LANGUAGE "Spanish"
+!insertmacro MUI_LANGUAGE "Swedish"
+!insertmacro MUI_LANGUAGE "Thai"
+!insertmacro MUI_LANGUAGE "Turkish"
+!insertmacro MUI_LANGUAGE "Ukrainian"
+!insertmacro MUI_LANGUAGE "Vietnamese"
 
 ; --- Variables for Custom Checkboxes ---
 Var CheckBoxDesktop
@@ -45,7 +86,7 @@ Var CheckBoxQuickLaunch
 Var CheckBoxTaskbar
 
 Name "${PRODUCT_NAME}"
-OutFile "setup.exe"
+OutFile "IE61Setup.exe"                ; <--- Compiled installer filename
 InstallDir "C:\IE61"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -53,23 +94,19 @@ ShowUnInstDetails show
 
 ; --- Installer Initialization ---
 Function .onInit
-  ; Set shell context to 'all' so shortcuts go to Public/All Users folders
   SetShellVarContext all
+  
+  ; Triggers the language selection dialog right before the Welcome screen
+  !insertmacro MUI_LANGDLL_DISPLAY
 FunctionEnd
 
 Section "Internet Explorer 6.1 Base (Required)" SEC_BASE
-  SectionIn RO
+  SectionIn RO ; Mandatory base section
   SetOverwrite on
   
-  ; Copy main application executable to installation root
+  ; Package root directory recursively while excluding the installer and script itself
   SetOutPath "$INSTDIR"
-  File "iexplore61.exe"
-  
-  ; Bundle and extract the source folder directly into $INSTDIR\source
-  SetOutPath "$INSTDIR\source"
-  File /r "source\*.*"
-  
-  SetOutPath "$INSTDIR"
+  File /r /x "IE61Setup.exe" /x "installer.nsi" *.*
 SectionEnd
 
 Section -Post
@@ -106,6 +143,11 @@ Section -Post
     CreateShortCut "$QUICKLAUNCH\Internet Explorer 6.1.lnk" "$INSTDIR\iexplore61.exe" "" "$INSTDIR\source\ieicon.ico" 0
   ${EndIf}
 
+  ; Taskbar shortcut handling
+  ${If} $CheckBoxTaskbar == 1
+    CreateShortCut "$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Internet Explorer 6.1.lnk" "$INSTDIR\iexplore61.exe" "" "$INSTDIR\source\ieicon.ico" 0
+  ${EndIf}
+
   ; Tell Windows shell to refresh icon caches so the new shortcuts show up instantly
   System::Call 'shell32.dll::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 SectionEnd
@@ -132,7 +174,7 @@ Function ExtraShortcutOptionsPage
   Pop $CheckBoxQuickLaunch
   SendMessage $CheckBoxQuickLaunch ${BM_SETCHECK} ${BST_CHECKED} 0
 
-  ${NSD_CreateCheckbox} 10u 70u 290u 15u "Pin to Windows Taskbar (creates shortcut)"
+  ${NSD_CreateCheckbox} 10u 70u 290u 15u "Pin to Windows Taskbar"
   Pop $CheckBoxTaskbar
   SendMessage $CheckBoxTaskbar ${BM_SETCHECK} ${BST_CHECKED} 0
 
@@ -148,27 +190,20 @@ FunctionEnd
 
 ; --- Uninstaller Section ---
 Section Uninstall
-  ; Match the shell context so uninstaller deletes from All Users folders too
   SetShellVarContext all
 
-  Delete "$INSTDIR\uninst.exe"
-  
-  ; Clean up source folder contents and the directory itself
-  RMDir /r "$INSTDIR\source"
-  
-  Delete "$INSTDIR\iexplore61.exe"
-  Delete "$INSTDIR\history.txt"
-  Delete "$INSTDIR\homepage.txt"
-  Delete "$INSTDIR\default_check.txt"
+  ; Recursively wipe out the entire installation folder contents
+  RMDir /r "$INSTDIR"
 
+  ; Remove shortcuts
   Delete "$DESKTOP\Internet Explorer 6.1.lnk"
   Delete "$SMPROGRAMS\Internet Explorer 6.1\Internet Explorer 6.1.lnk"
   Delete "$SMPROGRAMS\Internet Explorer 6.1\Uninstall.lnk"
   RMDir "$SMPROGRAMS\Internet Explorer 6.1"
   Delete "$QUICKLAUNCH\Internet Explorer 6.1.lnk"
+  Delete "$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Internet Explorer 6.1.lnk"
 
-  RMDir "$INSTDIR"
-
+  ; Clean registry keys
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
   
